@@ -21,19 +21,6 @@ class HomeScreen extends ConsumerWidget {
         fit: StackFit.expand,
         children: [
           Image.asset('assets/images/m6-splash-screen.jpg', fit: BoxFit.cover),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.35),
-                  Colors.black.withValues(alpha: 0.55),
-                  Colors.black.withValues(alpha: 0.85),
-                ],
-              ),
-            ),
-          ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(AppConstants.spacingLg),
@@ -43,12 +30,31 @@ class HomeScreen extends ConsumerWidget {
                   const SizedBox(height: AppConstants.spacingXl),
 
                   // Title
-                  Semantics(
-                        label: AppConstants.appName,
-                        child: Image.asset(
-                          'assets/images/m6-sudokulogotype.png',
-                          height: 64,
-                          fit: BoxFit.contain,
+                  //
+                  // The wordmark half of this asset is solid white, so it
+                  // needs some contrast of its own against the backdrop
+                  // image behind it — a small soft backdrop hugging just
+                  // the logo, rather than a screen-wide scrim.
+                  Center(
+                        child: Semantics(
+                          label: AppConstants.appName,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppConstants.spacingLg,
+                              vertical: AppConstants.spacingSm,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.28),
+                              borderRadius: BorderRadius.circular(
+                                AppConstants.largeBorderRadius,
+                              ),
+                            ),
+                            child: Image.asset(
+                              'assets/images/m6-sudokulogotype.png',
+                              height: 56,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                         ),
                       )
                       .animate()
@@ -109,17 +115,6 @@ class HomeScreen extends ConsumerWidget {
                   ),
 
                   const SizedBox(height: AppConstants.spacingXl),
-
-                  // Quick Actions
-                  Text(
-                    'Quick Actions',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ).animate().fadeIn(duration: 300.ms, delay: 400.ms),
-
-                  const SizedBox(height: AppConstants.spacingMd),
 
                   Row(
                     children: [
@@ -182,7 +177,7 @@ class HomeScreen extends ConsumerWidget {
                   Text(
                     'Version ${AppConstants.appVersion}',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: _HomeColors.text.withValues(alpha: 0.6),
                     ),
                     textAlign: TextAlign.center,
                   ).animate().fadeIn(duration: 300.ms, delay: 700.ms),
@@ -203,9 +198,20 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// A "frosted glass" quick-action tile: sized to fit its icon+label content
-/// (rather than a fixed button height) so it never overflows, and styled
-/// for legibility over the busy home backdrop image.
+/// Text/icon color shared by the content laid directly over the home
+/// backdrop image (no scrim behind it), chosen for contrast against that
+/// image's light, airy palette.
+class _HomeColors {
+  _HomeColors._();
+
+  static const Color text = Color(0xFF2C2A28);
+}
+
+/// A solid card-style quick-action tile: sized to fit its icon+label content
+/// (rather than a fixed button height) so it never overflows. Uses an
+/// opaque-ish white card with a soft shadow — rather than relying on the
+/// backdrop image for contrast — so it stays legible regardless of what's
+/// behind it.
 class _QuickActionButton extends StatelessWidget {
   const _QuickActionButton({
     required this.icon,
@@ -220,8 +226,10 @@ class _QuickActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white.withValues(alpha: 0.14),
+      color: Colors.white.withValues(alpha: 0.9),
       borderRadius: BorderRadius.circular(12),
+      elevation: 3,
+      shadowColor: Colors.black.withValues(alpha: 0.25),
       child: InkWell(
         onTap: onPressed,
         borderRadius: BorderRadius.circular(12),
@@ -229,17 +237,17 @@ class _QuickActionButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+            border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 24, color: Colors.white),
+              Icon(icon, size: 24, color: AppThemeExtension.brandOrange),
               const SizedBox(height: 4),
               Text(
                 label,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: _HomeColors.text,
                   fontWeight: FontWeight.w600,
                 ),
               ),
