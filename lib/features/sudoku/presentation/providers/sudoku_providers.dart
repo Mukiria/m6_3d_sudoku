@@ -4,15 +4,19 @@ import 'package:m6_sudoku/core/audio/audio_service.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';
 import 'package:m6_sudoku/features/sudoku/data/datasources/puzzle_local_datasource.dart';
 import 'package:m6_sudoku/features/sudoku/data/datasources/daily_challenge_local_datasource.dart';
+import 'package:m6_sudoku/features/sudoku/data/datasources/daily_streak_local_datasource.dart';
 import 'package:m6_sudoku/features/sudoku/data/datasources/achievement_local_datasource.dart';
 import 'package:m6_sudoku/features/sudoku/data/repositories/puzzle_repository_impl.dart';
 import 'package:m6_sudoku/features/sudoku/data/repositories/daily_challenge_repository_impl.dart';
+import 'package:m6_sudoku/features/sudoku/data/repositories/daily_streak_repository_impl.dart';
 import 'package:m6_sudoku/features/sudoku/data/repositories/achievement_repository_impl.dart';
 import 'package:m6_sudoku/features/sudoku/domain/repositories/puzzle_repository.dart';
 import 'package:m6_sudoku/features/sudoku/domain/repositories/daily_challenge_repository.dart';
+import 'package:m6_sudoku/features/sudoku/domain/repositories/daily_streak_repository.dart';
 import 'package:m6_sudoku/features/sudoku/domain/repositories/achievement_repository.dart';
 import 'package:m6_sudoku/features/sudoku/domain/usecases/game_usecases.dart';
 import 'package:m6_sudoku/features/sudoku/domain/usecases/daily_challenge_usecases.dart';
+import 'package:m6_sudoku/features/sudoku/domain/usecases/daily_streak_usecases.dart';
 import 'package:m6_sudoku/features/sudoku/domain/usecases/achievement_usecases.dart';
 import 'package:m6_sudoku/features/sudoku/engine/generator/puzzle_generator.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/daily_challenge.dart';
@@ -122,6 +126,24 @@ final dailyChallengeStatsProvider = FutureProvider<DailyChallengeStats>((
     (stats) => stats,
   );
 });
+
+final dailyStreakLocalDataSourceProvider = Provider<DailyStreakLocalDataSource>(
+  (ref) {
+    final storage = ref.read(storageServiceProvider);
+    return DailyStreakLocalDataSource(storage);
+  },
+);
+
+final dailyStreakRepositoryProvider = Provider<DailyStreakRepository>((ref) {
+  final dataSource = ref.read(dailyStreakLocalDataSourceProvider);
+  return DailyStreakRepositoryImpl(dataSource);
+});
+
+final recordDailyStreakCompletionUseCaseProvider =
+    Provider<RecordDailyStreakCompletionUseCase>((ref) {
+      final repo = ref.read(dailyStreakRepositoryProvider);
+      return RecordDailyStreakCompletionUseCase(repo);
+    });
 
 final achievementLocalDataSourceProvider = Provider<AchievementLocalDataSource>(
   (ref) {

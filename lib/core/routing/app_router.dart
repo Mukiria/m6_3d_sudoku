@@ -6,6 +6,7 @@ import 'package:m6_sudoku/features/home/presentation/screens/home_screen.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/screens/game_screen.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/screens/difficulty_selection_screen.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/screens/completion_screen.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/screens/daily_streak_screen.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/screens/puzzle_loading_screen.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/screens/daily_challenge_screen.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/screens/achievement_screen.dart';
@@ -95,6 +96,44 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             hintsUsed: extra?['hintsUsed'] as int? ?? 0,
             difficulty:
                 extra?['difficulty'] as String? ?? AppConstants.difficultyEasy,
+          );
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: page,
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      // Daily streak celebration — slide up transition, matches completion.
+      GoRoute(
+        path: AppRoutes.dailyStreak,
+        name: 'dailyStreak',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final page = DailyStreakScreen(
+            currentStreak: extra?['currentStreak'] as int? ?? 1,
+            completedWeekdays:
+                extra?['completedWeekdays'] as Set<int>? ?? const {},
+            todayWeekday: extra?['todayWeekday'] as int? ?? 0,
           );
           return CustomTransitionPage(
             key: state.pageKey,
@@ -219,6 +258,7 @@ class AppRoutes {
   static const String settings = '/settings';
   static const String pause = '/pause';
   static const String completion = '/completion';
+  static const String dailyStreak = '/daily-streak';
   static const String puzzleLoading = '/loading';
   static const String dailyChallenge = '/daily';
   static const String achievements = '/achievements';
@@ -230,6 +270,7 @@ class AppRoutes {
   static String get settingsRoute => settings;
   static String get pauseRoute => pause;
   static String get completionRoute => completion;
+  static String get dailyStreakRoute => dailyStreak;
   static String get puzzleLoadingRoute => puzzleLoading;
   static String get dailyChallengeRoute => dailyChallenge;
   static String get achievementsRoute => achievements;

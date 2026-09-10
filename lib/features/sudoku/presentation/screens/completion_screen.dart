@@ -7,6 +7,7 @@ import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
 import 'package:m6_sudoku/shared/widgets/buttons.dart';
 import 'package:m6_sudoku/features/statistics/presentation/providers/statistics_provider.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
 import 'package:m6_sudoku/core/routing/app_router.dart';
 
 class CompletionScreen extends ConsumerStatefulWidget {
@@ -62,6 +63,34 @@ class _CompletionScreenState extends ConsumerState<CompletionScreen>
             hintsUsed: widget.hintsUsed,
             completed: true,
           );
+
+      _maybeShowDailyStreak();
+    });
+  }
+
+  /// Records today as a completed-puzzle day and, only if this is the
+  /// first puzzle completed today (regular game or Daily Challenge — both
+  /// land here), auto-navigates to the daily streak celebration once the
+  /// player has had a moment to see this "Puzzle Complete!" screen.
+  Future<void> _maybeShowDailyStreak() async {
+    final recordStreak = ref.read(recordDailyStreakCompletionUseCaseProvider);
+    final result = await recordStreak();
+
+    result.fold((_) {}, (data) {
+      if (!data.isFirstCompletionToday) return;
+
+      final today = DateTime.now();
+      Future.delayed(const Duration(milliseconds: 1800), () {
+        if (!mounted) return;
+        context.push(
+          AppRoutes.dailyStreak,
+          extra: {
+            'currentStreak': data.streak.currentStreak,
+            'completedWeekdays': data.streak.completedWeekdaysThisWeek(today),
+            'todayWeekday': today.weekday % 7,
+          },
+        );
+      });
     });
   }
 
