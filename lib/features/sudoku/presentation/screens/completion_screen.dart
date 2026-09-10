@@ -6,10 +6,8 @@ import 'package:confetti/confetti.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
 import 'package:m6_sudoku/shared/widgets/buttons.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/providers/game_provider.dart';
 import 'package:m6_sudoku/features/statistics/presentation/providers/statistics_provider.dart';
 import 'package:m6_sudoku/core/routing/app_router.dart';
-import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 
 class CompletionScreen extends ConsumerStatefulWidget {
   const CompletionScreen({
@@ -49,6 +47,22 @@ class _CompletionScreenState extends ConsumerState<CompletionScreen>
         _confettiController2.play();
       }
     });
+
+    // Recorded once per screen instance (initState only ever runs once),
+    // not in build(), which can rerun on unrelated rebuilds (theme change,
+    // rotation, text-scale change) and would otherwise double-count the
+    // same completed game in persisted statistics.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref
+          .read(statisticsProvider.notifier)
+          .recordGame(
+            difficulty: widget.difficulty,
+            timeSeconds: widget.time,
+            mistakes: widget.mistakes,
+            hintsUsed: widget.hintsUsed,
+            completed: true,
+          );
+    });
   }
 
   @override
@@ -81,18 +95,6 @@ class _CompletionScreenState extends ConsumerState<CompletionScreen>
       default:
         difficultyColor = colorScheme.primary;
     }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(statisticsProvider.notifier)
-          .recordGame(
-            difficulty: widget.difficulty,
-            timeSeconds: widget.time,
-            mistakes: widget.mistakes,
-            hintsUsed: widget.hintsUsed,
-            completed: true,
-          );
-    });
 
     return Scaffold(
       body: Stack(
@@ -242,20 +244,15 @@ class _CompletionScreenState extends ConsumerState<CompletionScreen>
                       children: [
                         AppButton(
                               onPressed: () {
-                                ref
-                                    .read(gameControllerProvider.notifier)
-                                    .newGame(
-                                      Difficulty.values.firstWhere(
-                                        (d) => d.name == widget.difficulty,
-                                        orElse: () => Difficulty.easy,
-                                      ),
-                                    );
-                                context.pop();
+                                context.go(
+                                  AppRoutes.game,
+                                  extra: widget.difficulty,
+                                );
                               },
                               variant: AppButtonVariant.filled,
                               size: AppButtonSize.large,
                               icon: const Icon(Icons.refresh_rounded),
-                              child: const Text('Play Again'),
+                              child: const Text('Play Next'),
                             )
                             .animate()
                             .fadeIn(duration: 400.ms, delay: 800.ms)
