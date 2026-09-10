@@ -37,6 +37,11 @@ class _GameScreenState extends ConsumerState<GameScreen>
   /// regenerate a puzzle instead of no-op'ing again.
   bool _initialContinueHandled = false;
 
+  /// Bumped whenever the selected cell changes, so [SudokuBoard] can key its
+  /// per-cell fade animation off it and restart the 3-second highlight fade
+  /// from full strength on every new selection.
+  int _selectionEpoch = 0;
+
   @override
   void initState() {
     super.initState();
@@ -207,9 +212,19 @@ class _GameScreenState extends ConsumerState<GameScreen>
     );
   }
 
+  static List<List<Set<int>>> _emptyNotesGrid() =>
+      List.generate(9, (_) => List.generate(9, (_) => <int>{}));
+
   @override
   Widget build(BuildContext context) {
     final gameState = ref.watch(gameControllerProvider);
+    final showPencilMarks = ref.watch(showPencilMarksProvider);
+
+    ref.listen<GameState?>(gameControllerProvider, (previous, next) {
+      if (next?.selectedCell != previous?.selectedCell) {
+        setState(() => _selectionEpoch++);
+      }
+    });
 
     if (gameState == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -255,11 +270,15 @@ class _GameScreenState extends ConsumerState<GameScreen>
                       child: SudokuBoard(
                         puzzle: gameState.puzzle,
                         userGrid: gameState.userGrid,
-                        notes: gameState.notes,
+                        notes:
+                            showPencilMarks
+                                ? gameState.notes
+                                : _emptyNotesGrid(),
                         selectedCell: gameState.selectedCell,
                         highlightedCells: gameState.highlightedCells,
                         conflictCells: gameState.conflictCells,
                         isNoteMode: gameState.isNoteMode,
+                        selectionEpoch: _selectionEpoch,
                         onCellTap:
                             (row, col) => ref
                                 .read(gameControllerProvider.notifier)

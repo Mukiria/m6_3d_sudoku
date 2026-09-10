@@ -4,11 +4,11 @@ import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/game_provider.dart';
 
-/// The game's control panel: an action row (Undo / Erase / Notes / Hint)
-/// followed by the 1-9 number row. Undo, Erase, and Hint act directly on
-/// [gameControllerProvider] since they need no per-cell context from the
-/// caller — only number selection is routed back up, since the caller owns
-/// what "select a number" means for cell input.
+/// The game's control panel: an action row (Undo / Erase / Notes / Pencil
+/// Marks / Hint) followed by the 1-9 number row. Undo, Erase, Pencil Marks,
+/// and Hint act directly on their providers since they need no per-cell
+/// context from the caller — only number selection is routed back up, since
+/// the caller owns what "select a number" means for cell input.
 class NumberPad extends ConsumerWidget {
   const NumberPad({
     super.key,
@@ -28,6 +28,7 @@ class NumberPad extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final gameState = ref.watch(gameControllerProvider);
+    final showPencilMarks = ref.watch(showPencilMarksProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -72,6 +73,27 @@ class NumberPad extends ConsumerWidget {
                   isNoteMode ? colorScheme.primary : colorScheme.outlineVariant,
               badgeTextColor:
                   isNoteMode
+                      ? colorScheme.onPrimary
+                      : colorScheme.onSurfaceVariant,
+            ),
+            _ActionButton(
+              icon:
+                  showPencilMarks
+                      ? Icons.visibility_rounded
+                      : Icons.visibility_off_rounded,
+              label: 'Pencil',
+              onTap:
+                  () =>
+                      ref.read(showPencilMarksProvider.notifier).state =
+                          !showPencilMarks,
+              colorScheme: colorScheme,
+              badgeText: showPencilMarks ? 'ON' : 'OFF',
+              badgeColor:
+                  showPencilMarks
+                      ? colorScheme.primary
+                      : colorScheme.outlineVariant,
+              badgeTextColor:
+                  showPencilMarks
                       ? colorScheme.onPrimary
                       : colorScheme.onSurfaceVariant,
             ),

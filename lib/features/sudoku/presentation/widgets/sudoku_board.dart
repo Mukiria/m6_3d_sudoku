@@ -20,6 +20,7 @@ class SudokuBoard extends StatelessWidget {
     required this.highlightedCells,
     required this.conflictCells,
     required this.isNoteMode,
+    required this.selectionEpoch,
     required this.onCellTap,
     required this.onCellLongPress,
   });
@@ -31,6 +32,12 @@ class SudokuBoard extends StatelessWidget {
   final Set<CellPosition> highlightedCells;
   final Set<CellPosition> conflictCells;
   final bool isNoteMode;
+
+  /// Bumped by the caller each time [selectedCell] changes to a different
+  /// cell. Cells key their fade animation off this so a fresh selection
+  /// always restarts the 3-second fade from full strength, rather than
+  /// picking up wherever the previous cell's animation left off.
+  final int selectionEpoch;
   final void Function(int row, int col) onCellTap;
   final void Function(int row, int col) onCellLongPress;
 
@@ -68,6 +75,7 @@ class SudokuBoard extends StatelessWidget {
                   highlightedCells: highlightedCells,
                   conflictCells: conflictCells,
                   cellSize: cellSize,
+                  selectionEpoch: selectionEpoch,
                   onCellTap: onCellTap,
                   onCellLongPress: onCellLongPress,
                   extension: extension,
@@ -97,6 +105,7 @@ class _SudokuBoardView extends StatelessWidget {
     required this.highlightedCells,
     required this.conflictCells,
     required this.cellSize,
+    required this.selectionEpoch,
     required this.onCellTap,
     required this.onCellLongPress,
     required this.extension,
@@ -110,6 +119,7 @@ class _SudokuBoardView extends StatelessWidget {
   final Set<CellPosition> highlightedCells;
   final Set<CellPosition> conflictCells;
   final double cellSize;
+  final int selectionEpoch;
   final void Function(int row, int col) onCellTap;
   final void Function(int row, int col) onCellLongPress;
   final AppThemeExtension extension;
@@ -146,6 +156,7 @@ class _SudokuBoardView extends StatelessWidget {
           isHighlighted: highlightedCells.contains(position),
           isConflicted: conflictCells.contains(position),
           cellSize: cellSize,
+          selectionEpoch: selectionEpoch,
           onCellTap: onCellTap,
           onCellLongPress: onCellLongPress,
           extension: extension,
@@ -168,11 +179,29 @@ class _SudokuCell extends StatelessWidget {
     required this.isHighlighted,
     required this.isConflicted,
     required this.cellSize,
+    required this.selectionEpoch,
     required this.onCellTap,
     required this.onCellLongPress,
     required this.extension,
     required this.colorScheme,
   });
+
+  /// How long the highlight stays at full strength before it starts to
+  /// fade out.
+  static const int _highlightHoldMs = 3000;
+
+  /// How long the fade-out transition itself takes, once it starts.
+  static const int _highlightFadeOutMs = 400;
+
+  static const Duration _highlightAnimationDuration = Duration(
+    milliseconds: _highlightHoldMs + _highlightFadeOutMs,
+  );
+
+  /// The fraction of [_highlightAnimationDuration] spent holding at full
+  /// strength before the fade-out begins — fed into an [Interval] so the
+  /// tween sits at its `begin` value until this point, then eases to `end`.
+  static const double _highlightHoldFraction =
+      _highlightHoldMs / (_highlightHoldMs + _highlightFadeOutMs);
 
   final int row;
   final int col;
@@ -183,6 +212,7 @@ class _SudokuCell extends StatelessWidget {
   final bool isHighlighted;
   final bool isConflicted;
   final double cellSize;
+  final int selectionEpoch;
   final void Function(int row, int col) onCellTap;
   final void Function(int row, int col) onCellLongPress;
   final AppThemeExtension extension;
@@ -194,11 +224,32 @@ class _SudokuCell extends StatelessWidget {
     // selection state — the cell's footprint never changes, so selection
     // and highlighting can never shift neighboring cells or push the grid
     // out of alignment.
+    //
+    // The blue selection/highlight tint holds at full strength for three
+    // seconds, then fades out. Keying the tween on [selectionEpoch] (bumped
+    // by the caller whenever the selected cell changes) forces every cell's
+    // animation to restart from full strength the moment a new cell is
+    // selected, instead of picking up wherever the previous selection's fade
+    // left off.
     return RepaintBoundary(
-      child: AnimatedContainer(
-        duration: AppConstants.fastAnimation,
-        curve: Curves.easeInOut,
-        decoration: BoxDecoration(color: _backgroundColor(), border: _border()),
+      child: TweenAnimationBuilder<double>(
+        key: ValueKey(selectionEpoch),
+        tween: Tween<double>(begin: 1.0, end: 0.0),
+        duration: _highlightAnimationDuration,
+        curve: const Interval(
+          _highlightHoldFraction,
+          1.0,
+          curve: Curves.easeIn,
+        ),
+        builder: (context, highlightStrength, child) {
+          return DecoratedBox(
+            decoration: BoxDecoration(
+              color: _backgroundColor(highlightStrength),
+              border: _border(),
+            ),
+            child: child,
+          );
+        },
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -213,12 +264,26 @@ class _SudokuCell extends StatelessWidget {
     );
   }
 
-  Color _backgroundColor() {
-    if (isConflicted) return extension.cellErrorBackground;
-    if (isSelected) return extension.cellSelectedBackground;
-    if (isHighlighted) return extension.cellRelatedBackground;
+  /// The color this cell settles at once its highlight (if any) has fully
+  /// faded away.
+  Color _restingColor() {
     if (isFixed) return extension.cellFixedBackground;
     return extension.cellBackground;
+  }
+
+  /// Blends from [_restingColor] to the active blue highlight color as
+  /// [highlightStrength] goes from 0.0 to 1.0. Conflicts are left out of the
+  /// fade entirely — they should stay fully visible until resolved.
+  Color _backgroundColor(double highlightStrength) {
+    if (isConflicted) return extension.cellErrorBackground;
+    if (!isSelected && !isHighlighted) return _restingColor();
+
+    final activeColor =
+        isSelected
+            ? extension.cellSelectedBackground
+            : extension.cellRelatedBackground;
+    return Color.lerp(_restingColor(), activeColor, highlightStrength) ??
+        _restingColor();
   }
 
   /// Thin lines between cells, thick lines every three cells to mark the

@@ -49,6 +49,7 @@ void main() {
             highlightedCells: {},
             conflictCells: {},
             isNoteMode: false,
+            selectionEpoch: 0,
             onCellTap: (row, col) {},
             onCellLongPress: (row, col) {},
           ),
@@ -108,6 +109,7 @@ void main() {
               },
               conflictCells: {},
               isNoteMode: false,
+              selectionEpoch: 0,
               onCellTap: (row, col) {},
               onCellLongPress: (row, col) {},
             ),
@@ -134,6 +136,7 @@ void main() {
               highlightedCells: {},
               conflictCells: {const CellPosition(row: 2, col: 2)},
               isNoteMode: false,
+              selectionEpoch: 0,
               onCellTap: (row, col) {},
               onCellLongPress: (row, col) {},
             ),
@@ -163,6 +166,7 @@ void main() {
               highlightedCells: {},
               conflictCells: {},
               isNoteMode: false,
+              selectionEpoch: 0,
               onCellTap: (row, col) {
                 tappedRow = row;
                 tappedCol = col;

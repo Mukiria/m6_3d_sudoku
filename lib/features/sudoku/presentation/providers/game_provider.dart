@@ -9,6 +9,15 @@ import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_provider
 
 part 'game_provider.g.dart';
 
+/// Whether the auto-computed candidate ("pencil mark") numbers are shown in
+/// empty cells. Purely a display preference — the underlying notes keep
+/// being tracked and updated regardless, so toggling this back on
+/// immediately reveals them again rather than losing anything. Reset to
+/// `true` whenever a puzzle starts (see [GameController.newGame] and
+/// [GameController.loadPuzzle]) so every new puzzle begins with pencil
+/// marks visible.
+final showPencilMarksProvider = StateProvider<bool>((ref) => true);
+
 @riverpod
 class GameController extends _$GameController {
   @override
@@ -56,6 +65,7 @@ class GameController extends _$GameController {
         lastSaved: DateTime.now(),
       );
     });
+    ref.read(showPencilMarksProvider.notifier).state = true;
     _startAutoSave();
   }
 
@@ -94,6 +104,7 @@ class GameController extends _$GameController {
       hintState: null,
       lastSaved: DateTime.now(),
     );
+    ref.read(showPencilMarksProvider.notifier).state = true;
     _startAutoSave();
   }
 
