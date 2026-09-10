@@ -1,16 +1,18 @@
 import 'dart:convert';
-import 'dart:math';
 import 'package:dartz/dartz.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
+import 'package:m6_sudoku/features/sudoku/engine/generator/puzzle_generator.dart';
+import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 import 'package:m6_sudoku/core/errors/failures.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';
 
 class PuzzleLocalDataSource {
-  PuzzleLocalDataSource(this._storage);
+  PuzzleLocalDataSource(this._storage, [PuzzleGenerator? generator])
+    : _generator = generator ?? PuzzleGenerator();
 
   final StorageService _storage;
-  int _solutions = 0;
+  final PuzzleGenerator _generator;
 
   static const String _puzzleKey = 'current_puzzle';
   static const String _gameStateKey = 'game_state';
@@ -165,144 +167,21 @@ class PuzzleLocalDataSource {
   }
 
   Puzzle _generatePuzzleForDifficulty(String difficulty) {
-    final cluesCount = _getCluesForDifficulty(difficulty);
-    final solution = _generateSolution();
-    final grid = _removeNumbers(solution, cluesCount);
+    final parsedDifficulty = Difficulty.values.firstWhere(
+      (d) => d.name == difficulty,
+      orElse: () => Difficulty.medium,
+    );
+    final (:puzzle, :solution) = _generator.generatePuzzleWithSolution(
+      parsedDifficulty,
+    );
 
     return Puzzle(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      grid: grid,
-      solution: solution,
+      grid: puzzle.toGrid(),
+      solution: solution.toGrid(),
       difficulty: difficulty,
-      cluesCount: cluesCount,
+      cluesCount: puzzle.filledCount,
       createdAt: DateTime.now(),
     );
-  }
-
-  int _getCluesForDifficulty(String difficulty) {
-    switch (difficulty) {
-      case 'easy':
-        return 36;
-      case 'medium':
-        return 30;
-      case 'hard':
-        return 26;
-      case 'expert':
-        return 22;
-      default:
-        return 30;
-    }
-  }
-
-  List<List<int>> _generateSolution() {
-    final grid = List.generate(9, (_) => List.filled(9, 0));
-    _fillGrid(grid);
-    return grid;
-  }
-
-  bool _fillGrid(List<List<int>> grid) {
-    final numbers = List.generate(9, (i) => i + 1);
-    numbers.shuffle(Random());
-
-    for (int row = 0; row < 9; row++) {
-      for (int col = 0; col < 9; col++) {
-        if (grid[row][col] == 0) {
-          for (final num in numbers) {
-            if (_isValid(grid, row, col, num)) {
-              grid[row][col] = num;
-              if (_fillGrid(grid)) {
-                return true;
-              }
-              grid[row][col] = 0;
-            }
-          }
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  bool _isValid(List<List<int>> grid, int row, int col, int num) {
-    for (int c = 0; c < 9; c++) {
-      if (grid[row][c] == num) return false;
-    }
-    for (int r = 0; r < 9; r++) {
-      if (grid[r][col] == num) return false;
-    }
-    final startRow = (row ~/ 3) * 3;
-    final startCol = (col ~/ 3) * 3;
-    for (int r = startRow; r < startRow + 3; r++) {
-      for (int c = startCol; c < startCol + 3; c++) {
-        if (grid[r][c] == num) return false;
-      }
-    }
-    return true;
-  }
-
-  List<List<int>> _removeNumbers(List<List<int>> solution, int cluesCount) {
-    final grid = List.generate(9, (r) => List<int>.from(solution[r]));
-    final cells = List<int>.generate(81, (i) => i)..shuffle(Random());
-
-    int removed = 0;
-    final toRemove = 81 - cluesCount;
-
-    for (final cellIndex in cells) {
-      if (removed >= toRemove) break;
-
-      final row = cellIndex ~/ 9;
-      final col = cellIndex % 9;
-
-      if (grid[row][col] != 0) {
-        final backup = grid[row][col];
-        grid[row][col] = 0;
-
-        if (_hasUniqueSolution(grid)) {
-          removed++;
-        } else {
-          grid[row][col] = backup;
-        }
-      }
-    }
-
-    return grid;
-  }
-
-  bool _hasUniqueSolution(List<List<int>> grid) {
-    _solutions = 0;
-    _countSolutions(grid);
-    return _solutions == 1;
-  }
-
-  void _countSolutions(List<List<int>> grid) {
-    if (_solutions > 1) return;
-
-    int? emptyRow;
-    int? emptyCol;
-
-    for (int r = 0; r < 9; r++) {
-      for (int c = 0; c < 9; c++) {
-        if (grid[r][c] == 0) {
-          emptyRow = r;
-          emptyCol = c;
-          break;
-        }
-      }
-      if (emptyRow != null) break;
-    }
-
-    if (emptyRow == null) {
-      _solutions++;
-      return;
-    }
-
-    for (int num = 1; num <= 9; num++) {
-      if (_isValid(grid, emptyRow!, emptyCol!, num)) {
-        grid[emptyRow!][emptyCol!] = num;
-        _countSolutions(grid);
-        grid[emptyRow!][emptyCol!] = 0;
-        if (_solutions > 1) return;
-      }
-    }
   }
 }

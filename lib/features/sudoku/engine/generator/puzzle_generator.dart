@@ -127,31 +127,36 @@ class PuzzleGenerator {
   }
 
   Board generatePuzzleWithDifficulty(Difficulty difficulty) {
-    int clues;
-    int maxAttempts;
+    final params = _paramsFor(difficulty);
+    return generatePuzzle(clues: params.clues, maxAttempts: params.maxAttempts);
+  }
+
+  /// Generates a puzzle for [difficulty] together with the full solved grid
+  /// it was carved from, so callers that need both (e.g. [PuzzleLocalDataSource]
+  /// and [DailyChallengeLocalDataSource]) don't have to re-derive or re-solve
+  /// the solution separately.
+  ({Board puzzle, Board solution}) generatePuzzleWithSolution(
+    Difficulty difficulty,
+  ) {
+    final params = _paramsFor(difficulty);
+    final fullGrid = generateCompleteGrid();
+    final puzzle = _removeClues(fullGrid, params.clues, params.maxAttempts);
+    return (puzzle: puzzle, solution: fullGrid);
+  }
+
+  ({int clues, int maxAttempts}) _paramsFor(Difficulty difficulty) {
     switch (difficulty) {
       case Difficulty.easy:
-        clues = 36;
-        maxAttempts = 50;
-        break;
+        return (clues: 36, maxAttempts: 50);
       case Difficulty.medium:
-        clues = 30;
-        maxAttempts = 80;
-        break;
+        return (clues: 30, maxAttempts: 80);
       case Difficulty.hard:
-        clues = 26;
-        maxAttempts = 100;
-        break;
+        return (clues: 26, maxAttempts: 100);
       case Difficulty.expert:
-        clues = 22;
-        maxAttempts = 150;
-        break;
+        return (clues: 22, maxAttempts: 150);
       case Difficulty.evil:
-        clues = 20;
-        maxAttempts = 200;
-        break;
+        return (clues: 20, maxAttempts: 200);
     }
-    return generatePuzzle(clues: clues, maxAttempts: maxAttempts);
   }
 
   static void _shuffle(List<int> list, _FastRandom random) {

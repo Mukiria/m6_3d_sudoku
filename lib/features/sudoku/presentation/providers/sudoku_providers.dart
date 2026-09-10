@@ -29,7 +29,8 @@ final puzzleGeneratorProvider = Provider<PuzzleGenerator>((ref) {
 
 final puzzleLocalDataSourceProvider = Provider<PuzzleLocalDataSource>((ref) {
   final storage = ref.read(storageServiceProvider);
-  return PuzzleLocalDataSource(storage);
+  final generator = ref.read(puzzleGeneratorProvider);
+  return PuzzleLocalDataSource(storage, generator);
 });
 
 final puzzleRepositoryProvider = Provider<PuzzleRepository>((ref) {
