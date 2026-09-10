@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/features/settings/presentation/providers/settings_provider.dart';
+import 'package:m6_sudoku/features/statistics/presentation/providers/statistics_provider.dart';
 import 'package:m6_sudoku/shared/widgets/cards.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -385,7 +386,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
               FilledButton(
                 onPressed: () {
-                  // TODO: Reset statistics
+                  ref.read(statisticsProvider.notifier).resetStatistics();
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Statistics reset')),
