@@ -30,6 +30,7 @@ enum AchievementCategory {
   speed,
   streak,
   special,
+  cube,
 }
 
 extension AchievementCategoryExtension on AchievementCategory {
@@ -49,6 +50,8 @@ extension AchievementCategoryExtension on AchievementCategory {
         return 'Streak';
       case AchievementCategory.special:
         return 'Special';
+      case AchievementCategory.cube:
+        return 'Cube';
     }
   }
 }

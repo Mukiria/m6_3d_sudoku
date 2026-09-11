@@ -10,6 +10,7 @@ import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 import 'package:m6_sudoku/features/sudoku/engine/puzzle_session_ops.dart';
+import 'package:m6_sudoku/features/statistics/presentation/providers/statistics_provider.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/game_provider.dart'
     show showPencilMarksProvider;
 import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart'
@@ -219,6 +220,13 @@ class CubeGameController extends _$CubeGameController {
         '${face.displayName} face solved!',
         TextDirection.ltr,
       );
+      // A face is a real, independently-solved puzzle of its own
+      // difficulty — folded into the same per-difficulty stats a regular
+      // single-puzzle completion feeds, immediately, rather than deferred
+      // until (or lost if) the whole six-face cube never gets finished.
+      ref
+          .read(statisticsProvider.notifier)
+          .recordCubeFaceCompletion(currentFaceState.difficulty.name);
     }
 
     state = state!.withFaceState(face, updatedFaceState);

@@ -9,6 +9,10 @@ import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
 import 'package:m6_sudoku/features/cube_sudoku/domain/entities/cube_face.dart';
 import 'package:m6_sudoku/features/cube_sudoku/domain/entities/cube_game_state.dart';
 import 'package:m6_sudoku/features/cube_sudoku/presentation/providers/cube_game_provider.dart';
+import 'package:m6_sudoku/features/cube_sudoku/presentation/providers/cube_sudoku_providers.dart';
+import 'package:m6_sudoku/features/statistics/presentation/providers/statistics_provider.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/widgets/achievement_unlock_banner.dart';
 import 'package:m6_sudoku/shared/widgets/buttons.dart';
 
 /// Shown once every one of the six faces has been solved. Reads the
@@ -36,12 +40,45 @@ class _CubeCompletionScreenState extends ConsumerState<CubeCompletionScreen> {
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) _confettiController.play();
     });
+    // Runs once, the same way the regular game's CompletionScreen records
+    // into statisticsProvider from its own initState — guarded on
+    // isComplete since this screen can in principle be reached via a stale
+    // deep link or a hot restart mid-flow (see the null-state branch
+    // below) without an actually-finished cube behind it.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final cubeState = ref.read(cubeGameControllerProvider);
+      if (cubeState == null || !cubeState.isComplete) return;
+      _recordCompletion(cubeState);
+    });
   }
 
   @override
   void dispose() {
     _confettiController.dispose();
     super.dispose();
+  }
+
+  Future<void> _recordCompletion(CubeGameState cubeState) async {
+    ref.read(statisticsProvider.notifier).recordCubeCompletion();
+
+    final deltas = ref.read(evaluateCubeAchievementDeltasUseCaseProvider)(
+      cubeState,
+    );
+    final result = await ref.read(
+      incrementAchievementProgressBatchUseCaseProvider,
+    )(deltas);
+    result.fold((_) {}, (unlocked) {
+      for (final achievement in unlocked) {
+        try {
+          ref.read(achievementUnlockQueueProvider.notifier).push(achievement);
+        } on StateError {
+          // Mirrors GameController._incrementAchievements: the achievement
+          // is already persisted at this point even if there's no screen
+          // left to animate the unlock on.
+        }
+      }
+    });
   }
 
   @override
@@ -122,15 +159,19 @@ class _CubeCompletionScreenState extends ConsumerState<CubeCompletionScreen> {
 
                     const SizedBox(height: AppConstants.spacingXl),
 
-                    Text(
-                          'Cube Complete!',
-                          style: theme.textTheme.displaySmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        )
-                        .animate()
-                        .fadeIn(duration: 400.ms, delay: 300.ms)
-                        .slideY(begin: 0.3, end: 0),
+                    Semantics(
+                      liveRegion: true,
+                      label: 'Cube complete! All six faces solved.',
+                      child: Text(
+                            'Cube Complete!',
+                            style: theme.textTheme.displaySmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          )
+                          .animate()
+                          .fadeIn(duration: 400.ms, delay: 300.ms)
+                          .slideY(begin: 0.3, end: 0),
+                    ),
 
                     const SizedBox(height: AppConstants.spacingSm),
 
@@ -229,6 +270,7 @@ class _CubeCompletionScreenState extends ConsumerState<CubeCompletionScreen> {
               ],
             ),
           ),
+          const AchievementUnlockBanner(),
         ],
       ),
     );

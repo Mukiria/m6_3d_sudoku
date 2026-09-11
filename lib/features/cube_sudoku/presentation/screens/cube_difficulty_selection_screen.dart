@@ -49,13 +49,18 @@ class _CubeDifficultySelectionScreenState
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('3D Sudoku Setup'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('M6 3D Sudoku Setup'),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppConstants.spacingLg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const _HowToPlayCard(),
+              const SizedBox(height: AppConstants.spacingMd),
               Text(
                 'Choose a difficulty for each of the six faces',
                 style: theme.textTheme.bodyLarge?.copyWith(
@@ -195,5 +200,107 @@ class _FaceSummaryTile extends StatelessWidget {
       case Difficulty.evil:
         return extension.difficultyHardColor;
     }
+  }
+}
+
+/// A short, static rundown of how Browse View's gestures work — the
+/// cube's controls are otherwise entirely undiscoverable the first time
+/// someone opens it, since nothing on screen hints that it's draggable.
+class _HowToPlayCard extends StatelessWidget {
+  const _HowToPlayCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    const accent = AppThemeExtension.brandOrange;
+
+    return Container(
+      padding: const EdgeInsets.all(AppConstants.spacingMd),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+        border: Border.all(color: accent.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.touch_app_rounded, color: accent, size: 20),
+              const SizedBox(width: AppConstants.spacingSm),
+              Text(
+                'Rotating the cube',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppConstants.spacingSm),
+          const _HowToPlayLine(
+            icon: Icons.view_in_ar_outlined,
+            text:
+                'Pinch in on the puzzle, or tap the cube icon at the top, '
+                'to open the rotating cube view.',
+          ),
+          const _HowToPlayLine(
+            icon: Icons.drag_indicator_rounded,
+            text: 'Drag anywhere on the cube to spin it and see each face.',
+          ),
+          const _HowToPlayLine(
+            icon: Icons.center_focus_strong_rounded,
+            text:
+                'Tap the face that\'s facing you (or pinch out) to open it '
+                'full-screen and start solving.',
+          ),
+          const _HowToPlayLine(
+            icon: Icons.zoom_in_map_rounded,
+            text:
+                'Pinch in while solving (or tap the cube icon again) to '
+                'shrink back onto the cube.',
+          ),
+          const _HowToPlayLine(
+            icon: Icons.circle_outlined,
+            text:
+                'Tap a dot above the cube to jump straight to that face.',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HowToPlayLine extends StatelessWidget {
+  const _HowToPlayLine({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: colorScheme.onSurfaceVariant),
+          const SizedBox(width: AppConstants.spacingSm),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                height: 1.3,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

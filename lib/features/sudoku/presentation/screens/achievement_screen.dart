@@ -439,6 +439,8 @@ class AchievementScreen extends ConsumerWidget {
         return Colors.red;
       case AchievementCategory.special:
         return Colors.teal;
+      case AchievementCategory.cube:
+        return AppThemeExtension.brandOrange;
     }
   }
 

@@ -24,12 +24,24 @@ class CubeBrowseView extends StatelessWidget {
     super.key,
     required this.yaw,
     required this.pitch,
+    this.roll = 0,
     required this.cubeSize,
     required this.faceBuilder,
   });
 
   final double yaw;
   final double pitch;
+
+  /// Spin around the axis pointing straight at the camera — driven by a
+  /// two-finger twist gesture (see [CubeGameScreen]'s `_onBrowseScaleUpdate`),
+  /// distinct from [yaw]/[pitch]'s single-finger orbit. Applied in camera
+  /// space, after yaw/pitch orient the cube, so it spins the whole rendered
+  /// cube in place on screen rather than changing which faces are visible —
+  /// a pure in-plane rotation never changes a vector's z-component, so the
+  /// face-visibility culling in [build] (which only looks at that
+  /// z-component) doesn't need to account for it.
+  final double roll;
+
   final double cubeSize;
   final Widget Function(BuildContext context, CubeFace face) faceBuilder;
 
@@ -51,18 +63,22 @@ class CubeBrowseView extends StatelessWidget {
             ).z.compareTo(CubeGeometry.worldNormal(b, yaw, pitch).z),
           );
 
-    // Fills whatever box it's given (the full Browse area, not a tight
-    // cubeSize square) so a rotated cube never gets clipped by its own
-    // container — only a generous safety net at the very edge of that
-    // full area, well clear of the cube itself at every reachable angle.
-    return ClipRect(
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          _groundShadow(),
-          for (final face in visibleFaces) _buildFace(context, face),
-        ],
-      ),
+    // No clip anywhere in this tree, deliberately: a face angled toward
+    // the camera is pushed forward by the same perspective divide as
+    // every other face (see the doc on CubeGeometry.perspective), which
+    // *enlarges* its painted size well past its own cubeSize×cubeSize
+    // layout box — Transform doesn't clip its child, but Stack's default
+    // clipBehavior (Clip.hardEdge) does, cropping that overflow right at
+    // the Stack's own bounds and reading as a mask over the cube no
+    // matter how generously the *layout* box around it is sized. Turning
+    // that off is what actually lets the whole cube paint freely.
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        _groundShadow(),
+        for (final face in visibleFaces) _buildFace(context, face),
+      ],
     );
   }
 
@@ -127,6 +143,7 @@ class CubeBrowseView extends StatelessWidget {
     final matrix =
         Matrix4.identity()
           ..setEntry(3, 2, CubeGeometry.perspective)
+          ..rotateZ(roll)
           ..rotateY(yaw)
           ..rotateX(pitch)
           ..multiply(CubeGeometry.fixedRotationMatrix4(face))

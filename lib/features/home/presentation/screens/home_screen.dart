@@ -141,8 +141,11 @@ class HomeScreen extends ConsumerWidget {
                                         ref,
                                         cubeState!,
                                       ),
-                                  variant: AppButtonVariant.outlined,
+                                  variant: AppButtonVariant.filled,
                                   size: AppButtonSize.large,
+                                  backgroundColor:
+                                      AppThemeExtension.brandOrange,
+                                  foregroundColor: Colors.white,
                                   icon: const Icon(Icons.view_in_ar_rounded),
                                   child: const Text('Continue 3D Sudoku'),
                                 )
@@ -156,8 +159,10 @@ class HomeScreen extends ConsumerWidget {
                                     () => context.push(
                                       AppRoutes.cubeDifficulty,
                                     ),
-                                variant: AppButtonVariant.outlined,
+                                variant: AppButtonVariant.filled,
                                 size: AppButtonSize.large,
+                                backgroundColor: AppThemeExtension.brandOrange,
+                                foregroundColor: Colors.white,
                                 icon: const Icon(Icons.view_in_ar_rounded),
                                 child: const Text('Play 3D Sudoku'),
                               )

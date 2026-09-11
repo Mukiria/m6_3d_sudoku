@@ -216,6 +216,52 @@ class AchievementLocalDataSource {
         isUnlocked: false,
         isSecret: true,
       ),
+
+      // Cube
+      Achievement(
+        id: 'first_cube',
+        name: 'Cube Master',
+        description: 'Solve all six faces of a 3D Sudoku cube',
+        icon: '🧊',
+        category: AchievementCategory.cube,
+        targetValue: 1,
+        currentProgress: 0,
+        isUnlocked: false,
+        isSecret: false,
+      ),
+      Achievement(
+        id: 'flawless_cube',
+        name: 'Flawless Cube',
+        description: 'Solve a cube with zero mistakes and zero hints',
+        icon: '💎',
+        category: AchievementCategory.cube,
+        targetValue: 1,
+        currentProgress: 0,
+        isUnlocked: false,
+        isSecret: false,
+      ),
+      Achievement(
+        id: 'speed_cuber',
+        name: 'Speed Cuber',
+        description: 'Solve a cube in under 20 minutes',
+        icon: '⚡',
+        category: AchievementCategory.cube,
+        targetValue: 1,
+        currentProgress: 0,
+        isUnlocked: false,
+        isSecret: false,
+      ),
+      Achievement(
+        id: 'evil_cube',
+        name: 'Evil Six',
+        description: 'Solve a cube with every face set to Evil difficulty',
+        icon: '😈',
+        category: AchievementCategory.cube,
+        targetValue: 1,
+        currentProgress: 0,
+        isUnlocked: false,
+        isSecret: true,
+      ),
     ];
   }
 

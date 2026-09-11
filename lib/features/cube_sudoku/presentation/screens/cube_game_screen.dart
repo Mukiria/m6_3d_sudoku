@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
@@ -16,6 +17,7 @@ import 'package:m6_sudoku/features/cube_sudoku/presentation/widgets/cube_geometr
 import 'package:m6_sudoku/features/cube_sudoku/presentation/widgets/cube_number_pad.dart';
 import 'package:m6_sudoku/features/cube_sudoku/presentation/widgets/cube_pause_sheet.dart';
 import 'package:m6_sudoku/features/cube_sudoku/presentation/widgets/cube_progress_indicator.dart';
+import 'package:m6_sudoku/features/settings/presentation/providers/settings_provider.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/game_provider.dart'
     show showPencilMarksProvider;
@@ -75,6 +77,23 @@ class _CubeGameScreenState extends ConsumerState<CubeGameScreen>
   _CubeMode _mode = _CubeMode.play;
   double _browseYaw = _kDefaultBrowseYaw;
   double _browsePitch = _kDefaultBrowsePitch;
+
+  /// Spin around the camera axis, driven by a two-finger twist — see
+  /// [CubeBrowseView.roll]. `ScaleUpdateDetails.rotation` is cumulative
+  /// since the current gesture started, not a per-frame delta, so
+  /// [_rollAtGestureStart] snapshots [_browseRoll] at `onScaleStart` and
+  /// every update simply adds that gesture's rotation-so-far on top of it —
+  /// which is also what lets roll persist correctly across separate
+  /// two-finger gestures instead of resetting each time.
+  double _browseRoll = 0;
+  double _rollAtGestureStart = 0;
+
+  /// Set once a Browse gesture ever sees a second pointer — guards the
+  /// "near-zero movement counts as a tap" heuristic in
+  /// [_onBrowseScaleEnd], which would otherwise misfire when a two-finger
+  /// twist happens to keep its focal point nearly still (fingers rotating
+  /// symmetrically about a shared center) and read as a tap-to-open.
+  bool _multiTouchUsed = false;
 
   late final AnimationController _morphController;
   CubeFace? _morphFace;
@@ -169,21 +188,36 @@ class _CubeGameScreenState extends ConsumerState<CubeGameScreen>
   // the gesture that already owns the pointer is unambiguous.
   double _browseGestureMovement = 0;
 
+  /// True for the duration of a Browse drag — [_buildBrowseContent] shrinks
+  /// the cube while this is set (see the doc there) so a face's
+  /// perspective enlargement (see [CubeGeometry.perspective]) can never
+  /// carry it past the edges of the screen while it's actively being spun,
+  /// even though nothing clips it anymore.
+  bool _isRotating = false;
+
   void _onBrowseScaleStart(ScaleStartDetails details) {
     _pinchTriggered = false;
+    _multiTouchUsed = false;
     _browseGestureMovement = 0;
+    _rollAtGestureStart = _browseRoll;
+    setState(() => _isRotating = true);
   }
 
   void _onBrowseScaleUpdate(ScaleUpdateDetails details) {
     if (_isMorphing) return;
     _browseGestureMovement += details.focalPointDelta.distance;
     if (details.pointerCount >= 2) {
+      _multiTouchUsed = true;
       if (!_pinchTriggered && details.scale > 1.18) {
         _pinchTriggered = true;
         _beginMorphToPlay(
           CubeGeometry.mostFacingCamera(_browseYaw, _browsePitch),
         );
+        return;
       }
+      setState(() {
+        _browseRoll = _rollAtGestureStart + details.rotation;
+      });
       return;
     }
     setState(() {
@@ -194,7 +228,8 @@ class _CubeGameScreenState extends ConsumerState<CubeGameScreen>
   }
 
   void _onBrowseScaleEnd(ScaleEndDetails details) {
-    if (_isMorphing || _pinchTriggered) return;
+    setState(() => _isRotating = false);
+    if (_isMorphing || _pinchTriggered || _multiTouchUsed) return;
     if (_browseGestureMovement < 8) {
       _beginMorphToPlay(
         CubeGeometry.mostFacingCamera(_browseYaw, _browsePitch),
@@ -220,6 +255,11 @@ class _CubeGameScreenState extends ConsumerState<CubeGameScreen>
     final face = CubeFace.values[index];
     ref.read(cubeGameControllerProvider.notifier).setActiveFace(face);
     setState(() => _selectionEpoch++);
+    // The flat carousel is what screen-reader/reduced-motion sessions get
+    // instead of the gesture-driven 3D Browse View (see forceFlat above) —
+    // swiping between pages is otherwise a silent visual change with
+    // nothing to tell a screen-reader user which face they landed on.
+    SemanticsService.announce('${face.displayName} face', TextDirection.ltr);
   }
 
   /// Which face the status bar (and the progress dots' active marker)
@@ -278,6 +318,30 @@ class _CubeGameScreenState extends ConsumerState<CubeGameScreen>
     });
   }
 
+  // Same top-bar shortcuts as the regular single-puzzle screen's
+  // GameTopBar — duplicated rather than reused because that widget pauses
+  // and resumes the single-puzzle timerControllerProvider, not this
+  // screen's separate cubeTimerControllerProvider.
+  Future<void> _visit(BuildContext context, WidgetRef ref, String route) async {
+    ref.read(cubeTimerControllerProvider).pause();
+    await context.push(route);
+    if (mounted) ref.read(cubeTimerControllerProvider).resume();
+  }
+
+  void _cycleTheme(BuildContext context, WidgetRef ref) {
+    const order = [ThemeMode.light, ThemeMode.dark, ThemeMode.system];
+    final current = ref.read(settingsProvider).themeMode;
+    final next = order[(order.indexOf(current) + 1) % order.length];
+    ref.read(settingsProvider.notifier).updateThemeMode(next);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Theme: ${next.name.capitalize()}'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
   void _navigateToCompletion() {
     if (_hasNavigatedToCompletion) return;
     _hasNavigatedToCompletion = true;
@@ -305,24 +369,37 @@ class _CubeGameScreenState extends ConsumerState<CubeGameScreen>
           cubeGameControllerProvider.select((s) => s!.faceState(face)),
         );
         final showPencilMarks = ref.watch(showPencilMarksProvider);
-        return Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppConstants.spacingSm,
-          ),
-          child: CubeFaceBoard(
-            face: face,
-            gameState: faceState,
-            showPencilMarks: showPencilMarks,
-            selectionEpoch: _selectionEpoch,
-            onCellTap: (row, col) {
-              if (!isInteractive) return;
-              ref.read(cubeGameControllerProvider.notifier).selectCell(face, row, col);
-            },
-            onCellLongPress: (row, col) {},
-            onRetry:
-                () => ref
+        // IgnorePointer, not just a no-op onCellTap: every cell has its
+        // own live InkWell regardless of isInteractive, and a tap almost
+        // always lands directly on one. Left to just no-op the callback,
+        // that InkWell still wins the gesture arena over the ancestor
+        // GestureDetector's onScale* (the one this exists to let through
+        // — see _onBrowseScaleEnd's tap-to-open-face detection), so the
+        // tap gets silently swallowed instead of ever opening the face.
+        // Excluding the whole board from hit-testing is what actually
+        // lets the ancestor see it.
+        return IgnorePointer(
+          ignoring: !isInteractive,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.spacingSm,
+            ),
+            child: CubeFaceBoard(
+              face: face,
+              gameState: faceState,
+              showPencilMarks: showPencilMarks,
+              selectionEpoch: _selectionEpoch,
+              onCellTap: (row, col) {
+                ref
                     .read(cubeGameControllerProvider.notifier)
-                    .retryFace(face),
+                    .selectCell(face, row, col);
+              },
+              onCellLongPress: (row, col) {},
+              onRetry:
+                  () => ref
+                      .read(cubeGameControllerProvider.notifier)
+                      .retryFace(face),
+            ),
           ),
         );
       },
@@ -379,6 +456,19 @@ class _CubeGameScreenState extends ConsumerState<CubeGameScreen>
       if (next == null) return;
       if (next.isComplete && previous?.isComplete != true) {
         _navigateToCompletion();
+      }
+      // Restarts the blue selection highlight's fade-in (see
+      // SudokuBoard's doc on selectionEpoch) every time a tap actually
+      // changes which cell is selected — not just when the active face
+      // itself changes (the three explicit `_selectionEpoch++` calls
+      // elsewhere in this file). Without this, a cell tapped more than a
+      // few seconds after its face was opened landed on a board whose
+      // per-cell fade timers — running ever since that face last got a
+      // fresh selectionEpoch — had already decayed to nothing, so the
+      // newly selected cell never visibly highlighted.
+      if (next.activeFaceState.selectedCell !=
+          previous?.activeFaceState.selectedCell) {
+        setState(() => _selectionEpoch++);
       }
     });
 
@@ -465,23 +555,22 @@ class _CubeGameScreenState extends ConsumerState<CubeGameScreen>
                       ],
                     ],
                     const Spacer(),
-                    Consumer(
-                      builder: (context, ref, _) {
-                        final timeElapsed = ref.watch(
-                          cubeGameControllerProvider.select(
-                            (s) => s!.timeElapsed,
-                          ),
-                        );
-                        return Text(
-                          _formatTime(timeElapsed),
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'monospace',
-                          ),
-                        );
-                      },
+                    _CircleIconButton(
+                      icon: Icons.palette_outlined,
+                      tooltip: 'Theme',
+                      onTap: () => _cycleTheme(context, ref),
+                    ),
+                    const SizedBox(width: AppConstants.spacingSm),
+                    _CircleIconButton(
+                      icon: Icons.leaderboard_rounded,
+                      tooltip: 'Statistics',
+                      onTap: () => _visit(context, ref, AppRoutes.statistics),
+                    ),
+                    const SizedBox(width: AppConstants.spacingSm),
+                    _CircleIconButton(
+                      icon: Icons.settings_rounded,
+                      tooltip: 'Settings',
+                      onTap: () => _visit(context, ref, AppRoutes.settings),
                     ),
                   ],
                 ),
@@ -517,12 +606,19 @@ class _CubeGameScreenState extends ConsumerState<CubeGameScreen>
               Consumer(
                 builder: (context, ref, _) {
                   final statusFace = _statusFace(ref);
-                  final faceState = ref.watch(
+                  final status = ref.watch(
                     cubeGameControllerProvider.select(
-                      (s) => s!.faceState(statusFace),
+                      (s) => (
+                        faceState: s!.faceState(statusFace),
+                        timeElapsed: s.timeElapsed,
+                      ),
                     ),
                   );
-                  return _StatusBar(face: statusFace, faceState: faceState);
+                  return _StatusBar(
+                    face: statusFace,
+                    faceState: status.faceState,
+                    timeElapsed: status.timeElapsed,
+                  );
                 },
               ),
               const SizedBox(height: AppConstants.spacingSm),
@@ -540,12 +636,18 @@ class _CubeGameScreenState extends ConsumerState<CubeGameScreen>
                               controller: _flatController(activeFace),
                               onPageChanged: _onPageChanged,
                               itemCount: CubeFace.values.length,
-                              itemBuilder:
-                                  (context, index) => _buildFaceContent(
+                              itemBuilder: (context, index) {
+                                final face = CubeFace.values[index];
+                                return Semantics(
+                                  container: true,
+                                  label: '${face.displayName} face',
+                                  child: _buildFaceContent(
                                     context,
-                                    CubeFace.values[index],
+                                    face,
                                     isInteractive: true,
                                   ),
+                                );
+                              },
                             );
                           },
                         )
@@ -641,17 +743,32 @@ class _CubeGameScreenState extends ConsumerState<CubeGameScreen>
       onScaleStart: _onBrowseScaleStart,
       onScaleUpdate: _onBrowseScaleUpdate,
       onScaleEnd: _onBrowseScaleEnd,
-      child: CubeBrowseView(
-        yaw: _browseYaw,
-        pitch: _browsePitch,
-        cubeSize: _browseCubeSize(constraints),
-        faceBuilder:
-            (context, face) => _scaledFaceContent(
-              context,
-              face,
-              isInteractive: false,
-              backgroundColor: gridColor,
-            ),
+      // Shrinking here, as a flat post-transform scale on the whole
+      // already-rendered cube, is what actually guarantees it stays on
+      // screen while being dragged — nothing in here clips anymore (see
+      // CubeBrowseView's doc on Stack's default clipBehavior), and a face
+      // near dead-on can paint well past its own nominal cubeSize (see
+      // CubeGeometry.perspective), so shrinking cubeSize itself would
+      // still need to guess how much enlargement to budget for at every
+      // possible angle. Scaling the finished result down instead reins
+      // in that enlargement too, by construction, however large it gets.
+      child: AnimatedScale(
+        scale: _isRotating ? 0.6 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        child: CubeBrowseView(
+          yaw: _browseYaw,
+          pitch: _browsePitch,
+          roll: _browseRoll,
+          cubeSize: _browseCubeSize(constraints),
+          faceBuilder:
+              (context, face) => _scaledFaceContent(
+                context,
+                face,
+                isInteractive: false,
+                backgroundColor: gridColor,
+              ),
+        ),
       ),
     );
   }
@@ -682,36 +799,39 @@ class _CubeGameScreenState extends ConsumerState<CubeGameScreen>
     final morphingFaceBackground =
         Color.lerp(gridColor, gridColor.withValues(alpha: 0), progress)!;
 
-    return ClipRect(
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          for (final other in CubeFace.values.where((f) => f != face))
-            if (CubeGeometry.worldNormal(other, _browseYaw, _browsePitch).z >
-                CubeGeometry.cullThreshold)
-              _buildStillFace(context, other, browseSize, 1 - progress),
-          Transform(
-            alignment: Alignment.center,
-            transform:
-                Matrix4.identity()
-                  ..setEntry(3, 2, perspective)
-                  ..rotateY(yaw)
-                  ..rotateX(pitch)
-                  ..multiply(CubeGeometry.fixedRotationMatrix4(face))
-                  ..translate(0.0, 0.0, size / 2),
-            child: SizedBox(
-              width: size,
-              height: size,
-              child: _scaledFaceContent(
-                context,
-                face,
-                isInteractive: progress > 0.98,
-                backgroundColor: morphingFaceBackground,
-              ),
+    // No ClipRect and no Stack clipBehavior here either — see the doc on
+    // CubeBrowseView.build for why Stack's default hard-edge clip crops a
+    // near-dead-on face's perspective-enlarged paint and reads as a mask,
+    // regardless of how the layout box around it is sized.
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        for (final other in CubeFace.values.where((f) => f != face))
+          if (CubeGeometry.worldNormal(other, _browseYaw, _browsePitch).z >
+              CubeGeometry.cullThreshold)
+            _buildStillFace(context, other, browseSize, 1 - progress),
+        Transform(
+          alignment: Alignment.center,
+          transform:
+              Matrix4.identity()
+                ..setEntry(3, 2, perspective)
+                ..rotateY(yaw)
+                ..rotateX(pitch)
+                ..multiply(CubeGeometry.fixedRotationMatrix4(face))
+                ..translate(0.0, 0.0, size / 2),
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: _scaledFaceContent(
+              context,
+              face,
+              isInteractive: progress > 0.98,
+              backgroundColor: morphingFaceBackground,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -759,11 +879,12 @@ class _CubeGameScreenState extends ConsumerState<CubeGameScreen>
     );
   }
 
-  String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
-    final secs = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
-  }
+}
+
+String _formatTime(int seconds) {
+  final minutes = seconds ~/ 60;
+  final secs = seconds % 60;
+  return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
 }
 
 class _CircleIconButton extends StatelessWidget {
@@ -799,16 +920,24 @@ class _CircleIconButton extends StatelessWidget {
   }
 }
 
-/// The face name/difficulty/mistakes readout — always flat and screen-
-/// aligned, sitting above the cube/board area rather than inside it. Shown
-/// for whichever face is currently relevant: the active face in Play or
-/// the flat carousel, or whichever face is front-most in Browse View (see
-/// `_statusFace`), updating live as the player drags.
+/// The face name/difficulty/mistakes/timer readout — always flat and
+/// screen-aligned, sitting above the cube/board area rather than inside
+/// it. Shown for whichever face is currently relevant: the active face in
+/// Play or the flat carousel, or whichever face is front-most in Browse
+/// View (see `_statusFace`), updating live as the player drags. Laid out
+/// the same way as the single-puzzle screen's GameHeader — difficulty,
+/// mistakes, then the timer — just without that widget's trailing pause
+/// button, since pause already lives in this screen's own top bar.
 class _StatusBar extends StatelessWidget {
-  const _StatusBar({required this.face, required this.faceState});
+  const _StatusBar({
+    required this.face,
+    required this.faceState,
+    required this.timeElapsed,
+  });
 
   final CubeFace face;
   final GameState faceState;
+  final int timeElapsed;
 
   @override
   Widget build(BuildContext context) {
@@ -854,8 +983,21 @@ class _StatusBar extends StatelessWidget {
                       : colorScheme.onSurfaceVariant,
             ),
           ),
+          const Spacer(),
+          Text(
+            _formatTime(timeElapsed),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              fontFamily: 'monospace',
+            ),
+          ),
         ],
       ),
     );
   }
+}
+
+extension _ThemeModeCapitalize on String {
+  String capitalize() =>
+      isEmpty ? this : '${this[0].toUpperCase()}${substring(1)}';
 }

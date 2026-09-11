@@ -138,7 +138,7 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
 
   static const AppThemeExtension dark = AppThemeExtension(
     cellBackground: Color(0xFF2C2C2C),
-    cellBorder: brandOrangeLight,
+    cellBorder: Colors.white,
     cellSelectedBackground: Color(0xFF1565C0),
     cellSelectedBorder: Color(0xFF90CAF9),
     cellErrorBackground: Color(0xFFC62828),
@@ -149,7 +149,7 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     cellHighlightBackground: Color(0xFF1565C0),
     cellRelatedBackground: Color(0xFF0D47A1),
     gridBackgroundColor: Color(0xFF2C2C2C),
-    subGridLineColor: brandOrange,
+    subGridLineColor: Colors.white,
     numberButtonBackground: Color(0xFF1565C0),
     numberButtonSelectedBackground: Color(0xFF90CAF9),
     numberButtonDisabledBackground: Color(0xFF444444),

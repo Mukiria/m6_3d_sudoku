@@ -69,6 +69,7 @@ class StatisticsLocalDataSource {
       gamesWonByDifficulty: {},
       gamesPlayedByDifficulty: {},
       lastPlayed: null,
+      cubesCompleted: 0,
     );
   }
 }

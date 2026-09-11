@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m6_sudoku/features/cube_sudoku/data/datasources/cube_game_local_datasource.dart';
 import 'package:m6_sudoku/features/cube_sudoku/data/repositories/cube_game_repository_impl.dart';
 import 'package:m6_sudoku/features/cube_sudoku/domain/repositories/cube_game_repository.dart';
+import 'package:m6_sudoku/features/cube_sudoku/domain/usecases/cube_achievement_usecases.dart';
 import 'package:m6_sudoku/features/cube_sudoku/domain/usecases/cube_game_usecases.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart'
     show puzzleGeneratorProvider, storageServiceProvider;
@@ -50,3 +51,8 @@ final clearCubeGameStateUseCaseProvider = Provider<ClearCubeGameStateUseCase>((
   final repo = ref.read(cubeGameRepositoryProvider);
   return ClearCubeGameStateUseCase(repo);
 });
+
+final evaluateCubeAchievementDeltasUseCaseProvider =
+    Provider<EvaluateCubeAchievementDeltasUseCase>((ref) {
+      return EvaluateCubeAchievementDeltasUseCase();
+    });

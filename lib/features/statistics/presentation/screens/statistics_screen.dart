@@ -83,6 +83,16 @@ class StatisticsScreen extends ConsumerWidget {
                         _buildStatCard(
                           theme,
                           extension,
+                          'Cubes Completed',
+                          stats.cubesCompleted.toString(),
+                          Icons.view_in_ar_rounded,
+                          AppThemeExtension.brandOrange,
+                          fullWidth: true,
+                        ),
+                        const SizedBox(height: AppConstants.spacingMd),
+                        _buildStatCard(
+                          theme,
+                          extension,
                           'Win Rate',
                           '${(stats.winRate * 100).toStringAsFixed(1)}%',
                           Icons.trending_up_rounded,

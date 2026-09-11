@@ -136,31 +136,44 @@ class CubeNumberPad extends ConsumerWidget {
             final isSelected = selection.selectedNumber == number;
 
             return Expanded(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-                onTap:
+              child: Semantics(
+                label:
                     isDisabled
-                        ? null
-                        : () => ref
-                            .read(cubeGameControllerProvider.notifier)
-                            .selectNumber(face, number),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    number.toString(),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight:
-                          isSelected ? FontWeight.w800 : FontWeight.w600,
-                      color:
-                          isDisabled
-                              ? colorScheme.onSurfaceVariant.withValues(
-                                alpha: 0.35,
-                              )
-                              : (isDark
-                                  ? Colors.white
-                                  : AppThemeExtension.brandBlue),
+                        ? 'Enter $number, all nine placed already'
+                        : 'Enter $number',
+                selected: isSelected,
+                button: true,
+                enabled: !isDisabled,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(
+                    AppConstants.borderRadius,
+                  ),
+                  onTap:
+                      isDisabled
+                          ? null
+                          : () => ref
+                              .read(cubeGameControllerProvider.notifier)
+                              .selectNumber(face, number),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: ExcludeSemantics(
+                      child: Text(
+                        number.toString(),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight:
+                              isSelected ? FontWeight.w800 : FontWeight.w600,
+                          color:
+                              isDisabled
+                                  ? colorScheme.onSurfaceVariant.withValues(
+                                    alpha: 0.35,
+                                  )
+                                  : (isDark
+                                      ? Colors.white
+                                      : AppThemeExtension.brandBlue),
+                        ),
+                      ),
                     ),
                   ),
                 ),

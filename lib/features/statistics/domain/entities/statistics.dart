@@ -13,6 +13,7 @@ class Statistics extends Equatable {
     required this.gamesWonByDifficulty,
     required this.gamesPlayedByDifficulty,
     required this.lastPlayed,
+    required this.cubesCompleted,
   });
 
   final int gamesPlayed;
@@ -27,6 +28,12 @@ class Statistics extends Equatable {
   final Map<String, int> gamesPlayedByDifficulty;
   final DateTime? lastPlayed;
 
+  /// Full six-face 3D Sudoku cubes solved. Each face's own difficulty is
+  /// folded into [gamesPlayedByDifficulty]/[gamesWonByDifficulty] separately
+  /// as it completes (see CubeGameController.setValue) — this is just the
+  /// cube-level counterpart to [gamesPlayed]/[gamesWon].
+  final int cubesCompleted;
+
   Statistics copyWith({
     int? gamesPlayed,
     int? gamesWon,
@@ -39,6 +46,7 @@ class Statistics extends Equatable {
     Map<String, int>? gamesWonByDifficulty,
     Map<String, int>? gamesPlayedByDifficulty,
     DateTime? lastPlayed,
+    int? cubesCompleted,
   }) {
     return Statistics(
       gamesPlayed: gamesPlayed ?? this.gamesPlayed,
@@ -54,6 +62,7 @@ class Statistics extends Equatable {
       gamesPlayedByDifficulty:
           gamesPlayedByDifficulty ?? this.gamesPlayedByDifficulty,
       lastPlayed: lastPlayed ?? this.lastPlayed,
+      cubesCompleted: cubesCompleted ?? this.cubesCompleted,
     );
   }
 
@@ -96,6 +105,7 @@ class Statistics extends Equatable {
       'gamesWonByDifficulty': gamesWonByDifficulty,
       'gamesPlayedByDifficulty': gamesPlayedByDifficulty,
       'lastPlayed': lastPlayed?.toIso8601String(),
+      'cubesCompleted': cubesCompleted,
     };
   }
 
@@ -121,6 +131,7 @@ class Statistics extends Equatable {
           json['lastPlayed'] != null
               ? DateTime.parse(json['lastPlayed'])
               : null,
+      cubesCompleted: json['cubesCompleted'] ?? 0,
     );
   }
 
@@ -137,6 +148,7 @@ class Statistics extends Equatable {
     gamesWonByDifficulty,
     gamesPlayedByDifficulty,
     lastPlayed,
+    cubesCompleted,
   ];
 }
 

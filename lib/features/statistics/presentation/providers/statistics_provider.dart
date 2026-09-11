@@ -141,7 +141,55 @@ class StatisticsController extends StateNotifier<AsyncValue<Statistics>> {
       gamesWonByDifficulty: newGamesWonByDiff,
       gamesPlayedByDifficulty: newGamesPlayedByDiff,
       lastPlayed: record.date,
+      cubesCompleted: current.cubesCompleted,
     );
+  }
+
+  /// Folds a single cube face's completion into the same per-difficulty
+  /// maps [recordGame] feeds — a face is a real, independently-solved
+  /// puzzle of its own difficulty, so it counts immediately, the moment it
+  /// completes, rather than being deferred until (or lost if) the whole
+  /// six-face cube never gets finished. Deliberately narrower than
+  /// [recordGame]/[_updateStats]: it never touches bestTimesByDifficulty,
+  /// the win streak, or the aggregate gamesPlayed/gamesWon — the cube has
+  /// no reliable per-face timer (CubeGameState tracks one shared clock for
+  /// the whole session, not one per face), and "one of six faces" isn't the
+  /// same unit as a standalone game for streak purposes.
+  Future<void> recordCubeFaceCompletion(String difficulty) async {
+    final current = state.value;
+    if (current == null) return;
+
+    final newGamesPlayedByDiff = Map<String, int>.from(
+      current.gamesPlayedByDifficulty,
+    );
+    newGamesPlayedByDiff[difficulty] =
+        (newGamesPlayedByDiff[difficulty] ?? 0) + 1;
+    final newGamesWonByDiff = Map<String, int>.from(
+      current.gamesWonByDifficulty,
+    );
+    newGamesWonByDiff[difficulty] = (newGamesWonByDiff[difficulty] ?? 0) + 1;
+
+    final updated = current.copyWith(
+      gamesPlayedByDifficulty: newGamesPlayedByDiff,
+      gamesWonByDifficulty: newGamesWonByDiff,
+    );
+    final updateStats = _ref.read(updateStatisticsUseCaseProvider);
+    await updateStats(updated);
+    state = AsyncValue.data(updated);
+  }
+
+  /// One full six-face cube solved — the cube-level counterpart to
+  /// [gamesPlayed]/[gamesWon].
+  Future<void> recordCubeCompletion() async {
+    final current = state.value;
+    if (current == null) return;
+
+    final updated = current.copyWith(
+      cubesCompleted: current.cubesCompleted + 1,
+    );
+    final updateStats = _ref.read(updateStatisticsUseCaseProvider);
+    await updateStats(updated);
+    state = AsyncValue.data(updated);
   }
 
   Future<void> resetStatistics() async {
@@ -171,6 +219,7 @@ class StatisticsController extends StateNotifier<AsyncValue<Statistics>> {
       gamesWonByDifficulty: {},
       gamesPlayedByDifficulty: {},
       lastPlayed: null,
+      cubesCompleted: 0,
     );
   }
 }
