@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'package:dartz/dartz.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/achievement.dart';
 import 'package:m6_sudoku/core/errors/failures.dart';
+import 'package:m6_sudoku/core/services/json_store.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';
 
 class AchievementLocalDataSource {
-  AchievementLocalDataSource(this._storage);
+  AchievementLocalDataSource(this._storage) : _json = JsonStore(_storage);
 
   final StorageService _storage;
+  final JsonStore _json;
 
   static const String _achievementsKey = 'achievements';
   static const String _achievementProgressKey = 'achievement_progress_';
@@ -236,20 +238,6 @@ class AchievementLocalDataSource {
     }
   }
 
-  Future<Either<Failure, void>> saveAchievements(
-    List<Achievement> achievements,
-  ) async {
-    try {
-      await _storage.setString(
-        _achievementsKey,
-        jsonEncode(achievements.map((a) => a.toJson()).toList()),
-      );
-      return const Right(null);
-    } catch (e) {
-      return Left(StorageFailure('Failed to save achievements: $e'));
-    }
-  }
-
   Future<Either<Failure, void>> unlockAchievement(String id) async {
     final result = await getAchievements();
     return result.fold((failure) => Left(failure), (achievements) async {
@@ -330,18 +318,51 @@ class AchievementLocalDataSource {
     });
   }
 
+  /// Applies every entry in [deltas] (achievement id → progress delta)
+  /// against a single read-modify-write cycle, instead of one cycle per
+  /// achievement. Multiple achievements progressing from the same event
+  /// (e.g. a game completion) previously each ran their own
+  /// getAchievements()-then-save() round trip; firing those concurrently
+  /// raced on the same storage key and could silently lose updates. Routing
+  /// them all through one batch call removes the race entirely.
+  Future<Either<Failure, List<Achievement>>> incrementProgressBatch(
+    Map<String, int> deltas,
+  ) async {
+    if (deltas.isEmpty) return const Right([]);
+    final result = await getAchievements();
+    return result.fold((failure) => Left(failure), (achievements) async {
+      final justUnlocked = <Achievement>[];
+      for (var i = 0; i < achievements.length; i++) {
+        final achievement = achievements[i];
+        final amount = deltas[achievement.id];
+        if (amount == null || achievement.isUnlocked) continue;
+
+        final newProgress = (achievement.currentProgress + amount).clamp(
+          0,
+          achievement.targetValue,
+        );
+        final unlockedNow = newProgress >= achievement.targetValue;
+        final updated = achievement.copyWith(
+          currentProgress: newProgress,
+          isUnlocked: unlockedNow,
+          unlockedAt: unlockedNow ? DateTime.now() : null,
+        );
+        achievements[i] = updated;
+        if (unlockedNow) justUnlocked.add(updated);
+      }
+      await _saveAchievements(achievements);
+      return Right(justUnlocked);
+    });
+  }
+
   Future<Either<Failure, void>> _saveAchievements(
     List<Achievement> achievements,
-  ) async {
-    try {
-      await _storage.setString(
-        _achievementsKey,
-        jsonEncode(achievements.map((a) => a.toJson()).toList()),
-      );
-      return const Right(null);
-    } catch (e) {
-      return Left(StorageFailure('Failed to save achievements: $e'));
-    }
+  ) {
+    return _json.writeJson(
+      _achievementsKey,
+      achievements.map((a) => a.toJson()).toList(),
+      'save achievements',
+    );
   }
 
   Future<Either<Failure, List<Achievement>>> getUnlockedAchievements() async {

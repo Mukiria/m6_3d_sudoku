@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
+import 'package:m6_sudoku/features/sudoku/engine/puzzle_session_ops.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
 
 part 'game_provider.g.dart';
@@ -21,52 +23,40 @@ final showPencilMarksProvider = StateProvider<bool>((ref) => true);
 @riverpod
 class GameController extends _$GameController {
   @override
-  GameState? build() => null;
+  GameState? build() {
+    ref.onDispose(() => _autoSaveTimer?.cancel());
+    return null;
+  }
 
-  // Cache for highlighted cells computation
-  final Map<int, Set<CellPosition>> _highlightedCache = {};
-  // Cache for conflict cells computation
-  final Map<String, Set<CellPosition>> _conflictCache = {};
-
-  // Bitmask constants for notes (bits 0-8 represent digits 1-9)
-  static const int _allCandidates = 0x1FF; // bits 0-8 set (1-9)
+  // Conflict/highlight detection, notes recomputation, and undo/redo replay
+  // are shared with the cube-sudoku feature — see PuzzleSessionOps.
+  final PuzzleSessionOps _ops = PuzzleSessionOps();
 
   Future<void> newGame(Difficulty difficulty) async {
-    final generatePuzzle = ref.read(generatePuzzleUseCaseProvider);
-    final result = await generatePuzzle(difficulty.name);
+    // Puzzle generation now runs on a background isolate (see
+    // PuzzleLocalDataSource._generatePuzzleForDifficulty), which means this
+    // method has a genuine async suspension point instead of resolving
+    // within one microtask. gameControllerProvider is autoDispose, and
+    // nothing guarantees a widget is watching it for the duration of a call
+    // like this one (main.dart's startup loadGame call, for instance,
+    // isn't watched by anything) — without keepAlive, autoDispose could
+    // tear this controller down mid-generation, silently discarding the
+    // result when `state = ...` below runs against an already-disposed
+    // instance.
+    final keepAliveLink = ref.keepAlive();
+    try {
+      final generatePuzzle = ref.read(generatePuzzleUseCaseProvider);
+      final result = await generatePuzzle(difficulty.name);
 
-    state = result.fold((failure) => throw Exception(failure.message), (
-      puzzle,
-    ) {
-      final initialNotes = _recomputeNotesBitmask(
-        puzzle.grid.map((row) => List<int>.from(row)).toList(),
-        puzzle,
+      state = result.fold(
+        (failure) => throw Exception(failure.message),
+        (puzzle) => _freshGameState(puzzle, difficulty),
       );
-      return GameState(
-        puzzleId: puzzle.id,
-        puzzle: puzzle,
-        userGrid: puzzle.grid.map((row) => List<int>.from(row)).toList(),
-        notes: initialNotes,
-        timeElapsed: 0,
-        mistakes: 0,
-        hintsUsed: 0,
-        penaltyTime: 0,
-        moveHistory: [],
-        redoStack: [],
-        status: GameStatus.playing,
-        lastPlayed: DateTime.now(),
-        difficulty: difficulty,
-        selectedCell: null,
-        selectedNumber: null,
-        isNoteMode: false,
-        highlightedCells: {},
-        conflictCells: {},
-        hintState: null,
-        lastSaved: DateTime.now(),
-      );
-    });
-    ref.read(showPencilMarksProvider.notifier).state = true;
-    _startAutoSave();
+      ref.read(showPencilMarksProvider.notifier).state = true;
+      _startAutoSave();
+    } finally {
+      keepAliveLink.close();
+    }
   }
 
   /// Loads a specific [puzzle] (used for the daily challenge) instead of
@@ -78,34 +68,19 @@ class GameController extends _$GameController {
     Puzzle puzzle, {
     required Difficulty difficulty,
   }) async {
-    final initialNotes = _recomputeNotesBitmask(
-      puzzle.grid.map((row) => List<int>.from(row)).toList(),
-      puzzle,
-    );
-    state = GameState(
-      puzzleId: puzzle.id,
-      puzzle: puzzle,
-      userGrid: puzzle.grid.map((row) => List<int>.from(row)).toList(),
-      notes: initialNotes,
-      timeElapsed: 0,
-      mistakes: 0,
-      hintsUsed: 0,
-      penaltyTime: 0,
-      moveHistory: [],
-      redoStack: [],
-      status: GameStatus.playing,
-      lastPlayed: DateTime.now(),
-      difficulty: difficulty,
-      selectedCell: null,
-      selectedNumber: null,
-      isNoteMode: false,
-      highlightedCells: {},
-      conflictCells: {},
-      hintState: null,
-      lastSaved: DateTime.now(),
-    );
+    state = _freshGameState(puzzle, difficulty);
     ref.read(showPencilMarksProvider.notifier).state = true;
     _startAutoSave();
+  }
+
+  /// The starting [GameState] for a brand-new session on [puzzle] — shared
+  /// by [newGame] (a freshly generated puzzle) and [loadPuzzle] (a puzzle
+  /// handed in already, e.g. the daily challenge), which otherwise differ
+  /// only in how they obtain that puzzle. Delegates to [PuzzleSessionOps] so
+  /// the cube-sudoku feature builds every face's starting state the exact
+  /// same way.
+  GameState _freshGameState(Puzzle puzzle, Difficulty difficulty) {
+    return _ops.buildFreshGameState(puzzle, difficulty);
   }
 
   Future<void> loadGame() async {
@@ -137,8 +112,8 @@ class GameController extends _$GameController {
 
     state = state!.copyWith(
       selectedCell: CellPosition(row: row, col: col),
-      highlightedCells: _getHighlightedCells(row, col),
-      conflictCells: _getConflicts(state!.userGrid),
+      highlightedCells: _ops.getHighlightedCells(row, col),
+      conflictCells: _ops.getConflicts(state!.userGrid),
       lastPlayed: DateTime.now(),
     );
   }
@@ -172,7 +147,7 @@ class GameController extends _$GameController {
     final previousValue = currentState.userGrid[row][col];
     if (previousValue == value) return;
 
-    final newGrid = _copyGrid(currentState.userGrid);
+    final newGrid = _ops.copyGrid(currentState.userGrid);
     newGrid[row][col] = value;
 
     final isCorrect = puzzle.solution[row][col] == value;
@@ -180,7 +155,7 @@ class GameController extends _$GameController {
         isCorrect ? currentState.mistakes : currentState.mistakes + 1;
 
     // Auto-remove candidates from affected cells using bitmasks
-    final newNotesGrid = _autoRemoveCandidatesBitmask(
+    final newNotesGrid = _ops.autoRemoveCandidatesBitmask(
       currentState.notes,
       row,
       col,
@@ -200,7 +175,7 @@ class GameController extends _$GameController {
       userGrid: newGrid,
       notes: newNotesGrid,
       mistakes: newMistakes,
-      conflictCells: _getConflicts(newGrid),
+      conflictCells: _ops.getConflicts(newGrid),
       moveHistory: [...currentState.moveHistory, newMove],
       redoStack: [],
       lastPlayed: DateTime.now(),
@@ -215,23 +190,46 @@ class GameController extends _$GameController {
       ref.read(audioServiceProvider).playClick();
     } else {
       ref.read(audioServiceProvider).playError();
+      // The sound and the cell's own color/border change are enough for a
+      // sighted player, but a screen-reader user only discovers a mistake
+      // by re-exploring the cell — this announces it immediately instead.
+      SemanticsService.announce('Incorrect', TextDirection.ltr);
     }
 
     if (newMistakes >= 3) {
       state = state!.copyWith(status: GameStatus.failed);
-    } else if (_checkCompletion(newGrid, puzzle.solution)) {
+      SemanticsService.announce(
+        'Game over. Too many mistakes.',
+        TextDirection.ltr,
+      );
+    } else if (_isGridComplete(newGrid, puzzle.solution)) {
       state = state!.copyWith(status: GameStatus.completed);
       _saveGame();
-      _checkAndUnlockAchievements(currentState);
-      _completeDailyChallengeIfNeeded(currentState);
+      // Every achievement this completion can affect is collected into one
+      // delta map and applied in a single batched write (see
+      // _incrementAchievements) rather than one write per achievement, so
+      // there's exactly one read-modify-write cycle against achievement
+      // storage per completion — not several racing ones.
+      final achievementDeltas = ref.read(
+        evaluateAchievementDeltasUseCaseProvider,
+      )(currentState);
+      _completeDailyChallengeIfNeeded(currentState, achievementDeltas);
+      _incrementAchievements(achievementDeltas);
       ref.read(audioServiceProvider).playWin();
+      SemanticsService.announce('Puzzle solved!', TextDirection.ltr);
     }
   }
 
   /// Records completion + streak/stats for the daily challenge, and blocks
   /// the puzzle from being replayed for credit: [CompleteDailyChallengeUseCase]
   /// rejects a second completion for the same date at the storage layer.
-  void _completeDailyChallengeIfNeeded(GameState completedState) {
+  /// Adds the 'daily_champion' progress into [achievementDeltas] rather than
+  /// writing it separately, so it lands in the same atomic achievement write
+  /// as every other unlock from this completion.
+  void _completeDailyChallengeIfNeeded(
+    GameState completedState,
+    Map<String, int> achievementDeltas,
+  ) {
     final puzzleId = completedState.puzzleId;
     if (!puzzleId.startsWith('daily_')) return;
 
@@ -244,7 +242,8 @@ class GameController extends _$GameController {
     );
     ref.invalidate(dailyChallengeProvider);
     ref.invalidate(dailyChallengeStatsProvider);
-    _incrementAchievement('daily_champion', 1);
+    achievementDeltas['daily_champion'] =
+        (achievementDeltas['daily_champion'] ?? 0) + 1;
   }
 
   void toggleNote(int row, int col, int note) {
@@ -264,7 +263,7 @@ class GameController extends _$GameController {
       newNotes.add(note);
     }
 
-    final newNotesGrid = _copyNotesGrid(currentState.notes);
+    final newNotesGrid = _ops.copyNotesGrid(currentState.notes);
     newNotesGrid[row][col] = newNotes;
 
     state = currentState.copyWith(
@@ -297,10 +296,10 @@ class GameController extends _$GameController {
     final previousValue = currentState.userGrid[row][col];
     if (previousValue == 0 && currentState.notes[row][col].isEmpty) return;
 
-    final newGrid = _copyGrid(currentState.userGrid);
+    final newGrid = _ops.copyGrid(currentState.userGrid);
     newGrid[row][col] = 0;
 
-    final newNotesGrid = _copyNotesGrid(currentState.notes);
+    final newNotesGrid = _ops.copyNotesGrid(currentState.notes);
     newNotesGrid[row][col] = <int>{};
 
     state = currentState.copyWith(
@@ -317,6 +316,10 @@ class GameController extends _$GameController {
           timestamp: DateTime.now(),
         ),
       ],
+      // A new move invalidates whatever was redoable — same as setValue —
+      // so a stale redo entry can't later reapply a value this clear just
+      // erased.
+      redoStack: [],
       lastPlayed: DateTime.now(),
       lastSaved: DateTime.now(),
     );
@@ -363,6 +366,10 @@ class GameController extends _$GameController {
           lastSaved: DateTime.now(),
         );
         ref.read(audioServiceProvider).playHint();
+        SemanticsService.announce(
+          'Hint: ${hint.explanation}',
+          TextDirection.ltr,
+        );
       }
     });
   }
@@ -377,41 +384,13 @@ class GameController extends _$GameController {
       currentState.moveHistory.length - 1,
     );
 
-    final newGrid = _copyGrid(currentState.userGrid);
-    int newMistakes = currentState.mistakes;
-    int newHintsUsed = currentState.hintsUsed;
-
-    switch (lastMove.type) {
-      case MoveType.value:
-        newGrid[lastMove.row][lastMove.col] = lastMove.previousValue ?? 0;
-        newMistakes = _calculateMistakes(newGrid, currentState.puzzle.solution);
-        break;
-      case MoveType.note:
-        // Notes are handled by recomputing
-        break;
-      case MoveType.hint:
-        newGrid[lastMove.row][lastMove.col] = lastMove.previousValue ?? 0;
-        newHintsUsed = (currentState.hintsUsed - 1).clamp(0, 999);
-        newMistakes = _calculateMistakes(newGrid, currentState.puzzle.solution);
-        break;
-      case MoveType.clear:
-        if (lastMove.previousValue != null) {
-          newGrid[lastMove.row][lastMove.col] = lastMove.previousValue!;
-        }
-        newMistakes = _calculateMistakes(newGrid, currentState.puzzle.solution);
-        break;
-      default:
-        break;
-    }
-
-    // Recompute notes from scratch based on new grid using bitmasks
-    final newNotesGrid = _recomputeNotesBitmask(newGrid, currentState.puzzle);
+    final applied = _ops.applyHistoryMove(currentState, lastMove, isUndo: true);
 
     state = currentState.copyWith(
-      userGrid: newGrid,
-      notes: newNotesGrid,
-      mistakes: newMistakes,
-      hintsUsed: newHintsUsed,
+      userGrid: applied.grid,
+      notes: applied.notes,
+      mistakes: applied.mistakes,
+      hintsUsed: applied.hintsUsed,
       moveHistory: previousMoves,
       redoStack: [lastMove, ...currentState.redoStack],
       status: GameStatus.playing,
@@ -429,41 +408,13 @@ class GameController extends _$GameController {
     final nextMove = currentState.redoStack.first;
     final remainingRedo = currentState.redoStack.sublist(1);
 
-    final newGrid = _copyGrid(currentState.userGrid);
-    int newMistakes = currentState.mistakes;
-    int newHintsUsed = currentState.hintsUsed;
-
-    switch (nextMove.type) {
-      case MoveType.value:
-        newGrid[nextMove.row][nextMove.col] = nextMove.newValue ?? 0;
-        newMistakes = _calculateMistakes(newGrid, currentState.puzzle.solution);
-        break;
-      case MoveType.note:
-        // Notes are handled by recomputing
-        break;
-      case MoveType.hint:
-        newGrid[nextMove.row][nextMove.col] = nextMove.newValue ?? 0;
-        newHintsUsed = (currentState.hintsUsed - 1).clamp(0, 999);
-        newMistakes = _calculateMistakes(newGrid, currentState.puzzle.solution);
-        break;
-      case MoveType.clear:
-        if (nextMove.previousValue != null) {
-          newGrid[nextMove.row][nextMove.col] = nextMove.previousValue!;
-        }
-        newMistakes = _calculateMistakes(newGrid, currentState.puzzle.solution);
-        break;
-      default:
-        break;
-    }
-
-    // Recompute notes from scratch based on new grid using bitmasks
-    final newNotesGrid = _recomputeNotesBitmask(newGrid, currentState.puzzle);
+    final applied = _ops.applyHistoryMove(currentState, nextMove, isUndo: false);
 
     state = currentState.copyWith(
-      userGrid: newGrid,
-      notes: newNotesGrid,
-      mistakes: newMistakes,
-      hintsUsed: newHintsUsed,
+      userGrid: applied.grid,
+      notes: applied.notes,
+      mistakes: applied.mistakes,
+      hintsUsed: applied.hintsUsed,
       moveHistory: [...currentState.moveHistory, nextMove],
       redoStack: remainingRedo,
       status: GameStatus.playing,
@@ -473,6 +424,7 @@ class GameController extends _$GameController {
     ref.read(audioServiceProvider).playClick();
     _saveGame();
   }
+
 
   void toggleNoteMode() {
     if (state == null) return;
@@ -525,9 +477,15 @@ class GameController extends _$GameController {
     saveGame(state!.copyWith(lastSaved: DateTime.now()));
   }
 
+  Timer? _autoSaveTimer;
+
   void _startAutoSave() {
-    // Periodic auto-save as backup (every 30 seconds)
-    Future.delayed(const Duration(seconds: 30), () {
+    // Periodic auto-save as backup (every 30 seconds). Cancelable — see
+    // build()'s ref.onDispose — because an unguarded Future.delayed here
+    // would keep firing after this controller (autoDispose) is torn down
+    // and try to `ref.read` through an already-disposed ref, throwing.
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = Timer(const Duration(seconds: 30), () {
       if (state != null && state!.status == GameStatus.playing) {
         _saveGame();
         _startAutoSave();
@@ -535,249 +493,14 @@ class GameController extends _$GameController {
     });
   }
 
-  Set<CellPosition> _getHighlightedCells(int row, int col) {
-    final key = row * 9 + col;
-    return _highlightedCache.putIfAbsent(key, () {
-      final highlighted = <CellPosition>{};
-
-      // Highlight row
-      for (int c = 0; c < 9; c++) {
-        if (c != col) highlighted.add(CellPosition(row: row, col: c));
-      }
-
-      // Highlight column
-      for (int r = 0; r < 9; r++) {
-        if (r != row) highlighted.add(CellPosition(row: r, col: col));
-      }
-
-      // Highlight 3x3 box
-      final boxRow = (row ~/ 3) * 3;
-      final boxCol = (col ~/ 3) * 3;
-      for (int r = boxRow; r < boxRow + 3; r++) {
-        for (int c = boxCol; c < boxCol + 3; c++) {
-          if (r != row || c != col) {
-            highlighted.add(CellPosition(row: r, col: c));
-          }
-        }
-      }
-
-      return highlighted;
-    });
-  }
-
-  Set<CellPosition> _getConflicts(List<List<int>> grid) {
-    // Create a hash of the grid for caching
-    final hash = _gridHash(grid);
-    return _conflictCache.putIfAbsent(hash, () {
-      final conflicts = <CellPosition>{};
-
-      // Check rows
-      for (int r = 0; r < 9; r++) {
-        final seen = <int, int>{};
-        for (int c = 0; c < 9; c++) {
-          final val = grid[r][c];
-          if (val != 0) {
-            if (seen.containsKey(val)) {
-              conflicts.add(CellPosition(row: r, col: seen[val]!));
-              conflicts.add(CellPosition(row: r, col: c));
-            } else {
-              seen[val] = c;
-            }
-          }
-        }
-      }
-
-      // Check columns
-      for (int c = 0; c < 9; c++) {
-        final seen = <int, int>{};
-        for (int r = 0; r < 9; r++) {
-          final val = grid[r][c];
-          if (val != 0) {
-            if (seen.containsKey(val)) {
-              conflicts.add(CellPosition(row: seen[val]!, col: c));
-              conflicts.add(CellPosition(row: r, col: c));
-            } else {
-              seen[val] = r;
-            }
-          }
-        }
-      }
-
-      // Check 3x3 boxes
-      for (int boxRow = 0; boxRow < 3; boxRow++) {
-        for (int boxCol = 0; boxCol < 3; boxCol++) {
-          final seen = <int, CellPosition>{};
-          for (int r = 0; r < 3; r++) {
-            for (int c = 0; c < 3; c++) {
-              final rIdx = boxRow * 3 + r;
-              final cIdx = boxCol * 3 + c;
-              final val = grid[rIdx][cIdx];
-              if (val != 0) {
-                if (seen.containsKey(val)) {
-                  conflicts.add(seen[val]!);
-                  conflicts.add(CellPosition(row: rIdx, col: cIdx));
-                } else {
-                  seen[val] = CellPosition(row: rIdx, col: cIdx);
-                }
-              }
-            }
-          }
-        }
-      }
-
-      return conflicts;
-    });
-  }
-
-  String _gridHash(List<List<int>> grid) {
-    final buffer = StringBuffer();
-    for (int r = 0; r < 9; r++) {
-      for (int c = 0; c < 9; c++) {
-        buffer.write(grid[r][c]);
-      }
-    }
-    return buffer.toString();
-  }
-
-  bool _checkCompletion(List<List<int>> grid, List<List<int>> solution) {
-    for (int r = 0; r < 9; r++) {
-      for (int c = 0; c < 9; c++) {
-        if (grid[r][c] != solution[r][c]) return false;
-      }
-    }
-    return true;
-  }
-
-  int _calculateMistakes(List<List<int>> grid, List<List<int>> solution) {
-    int mistakes = 0;
-    for (int r = 0; r < 9; r++) {
-      for (int c = 0; c < 9; c++) {
-        if (grid[r][c] != 0 && grid[r][c] != solution[r][c]) {
-          mistakes++;
-        }
-      }
-    }
-    return mistakes;
-  }
-
-  // Bitmask-based notes computation - much faster than Set-based
-  List<List<Set<int>>> _recomputeNotesBitmask(
-    List<List<int>> grid,
-    Puzzle puzzle,
-  ) {
-    final newNotesBitmask = List.generate(9, (_) => List.generate(9, (_) => 0));
-
-    // Precompute row, col, box masks for the current grid + puzzle givens
-    final rowMasks = List.filled(9, 0);
-    final colMasks = List.filled(9, 0);
-    final boxMasks = List.filled(9, 0);
-
-    // Fill masks with fixed values (user entries + puzzle givens)
-    for (int r = 0; r < 9; r++) {
-      for (int c = 0; c < 9; c++) {
-        final val = grid[r][c] != 0 ? grid[r][c] : puzzle.grid[r][c];
-        if (val != 0) {
-          final bit = 1 << (val - 1);
-          rowMasks[r] |= bit;
-          colMasks[c] |= bit;
-          boxMasks[(r ~/ 3) * 3 + (c ~/ 3)] |= bit;
-        }
-      }
-    }
-
-    // Compute candidates for each empty cell
-    for (int r = 0; r < 9; r++) {
-      for (int c = 0; c < 9; c++) {
-        if (grid[r][c] == 0 && puzzle.grid[r][c] == 0) {
-          final boxIndex = (r ~/ 3) * 3 + (c ~/ 3);
-          final usedMask = rowMasks[r] | colMasks[c] | boxMasks[boxIndex];
-          newNotesBitmask[r][c] = _allCandidates & ~usedMask;
-        }
-      }
-    }
-
-    // Convert bitmasks to Sets for the GameState
-    return List.generate(
-      9,
-      (r) => List.generate(9, (c) {
-        final mask = newNotesBitmask[r][c];
-        if (mask == 0) return <int>{};
-        final set = <int>{};
-        var m = mask;
-        while (m != 0) {
-          final bit = m & -m;
-          set.add(_bitToDigit(bit));
-          m &= m - 1;
-        }
-        return set;
-      }),
-    );
-  }
-
-  List<List<Set<int>>> _autoRemoveCandidatesBitmask(
-    List<List<Set<int>>> notes,
-    int row,
-    int col,
-    int value,
-  ) {
-    final newNotes = _copyNotesGrid(notes);
-
-    // Remove from row
-    for (int c = 0; c < 9; c++) {
-      newNotes[row][c].remove(value);
-    }
-
-    // Remove from column
-    for (int r = 0; r < 9; r++) {
-      newNotes[r][col].remove(value);
-    }
-
-    // Remove from box
-    final boxRow = (row ~/ 3) * 3;
-    final boxCol = (col ~/ 3) * 3;
-    for (int r = boxRow; r < boxRow + 3; r++) {
-      for (int c = boxCol; c < boxCol + 3; c++) {
-        newNotes[r][c].remove(value);
-      }
-    }
-
-    // Clear the cell itself
-    newNotes[row][col].clear();
-
-    return newNotes;
-  }
-
-  static int _bitToDigit(int bit) {
-    switch (bit) {
-      case 0x001:
-        return 1;
-      case 0x002:
-        return 2;
-      case 0x004:
-        return 3;
-      case 0x008:
-        return 4;
-      case 0x010:
-        return 5;
-      case 0x020:
-        return 6;
-      case 0x040:
-        return 7;
-      case 0x080:
-        return 8;
-      case 0x100:
-        return 9;
-      default:
-        return 0;
-    }
-  }
-
-  List<List<int>> _copyGrid(List<List<int>> grid) {
-    return grid.map((row) => List<int>.from(row)).toList();
-  }
-
-  List<List<Set<int>>> _copyNotesGrid(List<List<Set<int>>> notes) {
-    return notes.map((row) => List<Set<int>>.from(row)).toList();
+  // Delegates to the existing domain usecase rather than keeping a private
+  // copy — CheckCompletionUseCase already implemented this exact check but
+  // had no caller; this used to silently duplicate it here instead.
+  bool _isGridComplete(List<List<int>> grid, List<List<int>> solution) {
+    final result = ref.read(
+      checkCompletionUseCaseProvider,
+    )(grid: grid, solution: solution);
+    return result.fold((_) => false, (complete) => complete);
   }
 
   void clearHintState() {
@@ -785,99 +508,35 @@ class GameController extends _$GameController {
     state = state!.copyWith(hintState: null);
   }
 
-  void _checkAndUnlockAchievements(GameState completedState) {
-    final currentState = state!;
-    final difficulty = currentState.difficulty.name;
-    final timeElapsed = currentState.timeElapsed;
-    final mistakes = currentState.mistakes;
-    final hintsUsed = currentState.hintsUsed;
-    final hour = DateTime.now().hour;
-
-    // First Win
-    _incrementAchievement('first_win', 1);
-
-    // Ten Wins
-    _incrementAchievement('ten_wins', 1);
-
-    // Hundred Wins
-    _incrementAchievement('hundred_wins', 1);
-
-    // Perfect Game (0 mistakes, 0 hints)
-    if (mistakes == 0 && hintsUsed == 0) {
-      _incrementAchievement('perfect_game', 1);
-      _incrementAchievement('five_perfect', 1);
-    }
-
-    // No Hints
-    if (hintsUsed == 0) {
-      _incrementAchievement('no_hints', 1);
-      _incrementAchievement('ten_no_hints', 1);
-    }
-
-    // Expert Winner
-    if (difficulty == 'expert') {
-      _incrementAchievement('expert_winner', 1);
-    }
-
-    // Evil Conqueror (secret)
-    if (difficulty == 'evil') {
-      _incrementAchievement('evil_conqueror', 1);
-    }
-
-    // All Difficulties - check what difficulties have been won
-    // This would need to track which difficulties have been won
-    // For now, increment and let the progress system handle it
-    // TODO: Implement difficulty tracking
-
-    // Speed Runner (under 3 minutes = 180 seconds)
-    if (timeElapsed < 180) {
-      _incrementAchievement('speed_runner', 1);
-    }
-
-    // Lightning Fast (Easy under 1 minute = 60 seconds)
-    if (difficulty == 'easy' && timeElapsed < 60) {
-      _incrementAchievement('lightning', 1);
-    }
-
-    // Streaks are handled by statistics
-
-    // Daily Champion - handled by daily challenge
-
-    // Night Owl (midnight - 4 AM)
-    if (hour >= 0 && hour < 4) {
-      _incrementAchievement('night_owl', 1);
-    }
-
-    // Early Bird (4 AM - 7 AM)
-    if (hour >= 4 && hour < 7) {
-      _incrementAchievement('early_bird', 1);
-    }
-  }
-
-  /// Increments achievement [id]'s progress and, if this is the call that
-  /// crosses its target, queues it for [AchievementUnlockBanner] to animate.
-  Future<void> _incrementAchievement(String id, int amount) async {
-    final result = await ref.read(incrementAchievementProgressUseCaseProvider)(
-      id,
-      amount,
-    );
+  /// Applies [deltas] in one batched write and queues every achievement
+  /// that write unlocked for [AchievementUnlockBanner] to animate.
+  Future<void> _incrementAchievements(Map<String, int> deltas) async {
+    final result = await ref.read(
+      incrementAchievementProgressBatchUseCaseProvider,
+    )(deltas);
     result.fold((_) {}, (unlocked) {
-      if (unlocked == null) return;
-      try {
-        ref.read(achievementUnlockQueueProvider.notifier).push(unlocked);
-      } on StateError {
-        // gameControllerProvider is autodispose: completing a game
-        // navigates away almost immediately, which can dispose this
-        // controller before this await resumes. The achievement is
-        // already persisted at this point; there's just no screen left
-        // to animate the unlock on.
+      for (final achievement in unlocked) {
+        try {
+          ref.read(achievementUnlockQueueProvider.notifier).push(achievement);
+        } on StateError {
+          // gameControllerProvider is autodispose: completing a game
+          // navigates away almost immediately, which can dispose this
+          // controller before this await resumes. The achievement is
+          // already persisted at this point; there's just no screen left
+          // to animate the unlock on.
+        }
       }
     });
   }
 }
 
-class TimerController extends StateNotifier<int> {
-  TimerController(this.ref) : super(0);
+/// Ticks gameControllerProvider's timeElapsed once a second while a game is
+/// playing. Holds no timer state of its own — GameState.timeElapsed is the
+/// only source of truth for elapsed time, and no widget ever read this
+/// controller's own tick count, so it's a plain Timer wrapper rather than a
+/// second, redundant copy of the clock.
+class TimerController {
+  TimerController(this.ref);
 
   final Ref ref;
   Timer? _timer;
@@ -887,7 +546,6 @@ class TimerController extends StateNotifier<int> {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       final gameState = ref.read(gameControllerProvider);
       if (gameState != null && gameState.status == GameStatus.playing) {
-        state = state + 1;
         ref.read(gameControllerProvider.notifier).incrementTimer();
       }
     });
@@ -905,18 +563,15 @@ class TimerController extends StateNotifier<int> {
   void reset() {
     _timer?.cancel();
     _timer = null;
-    state = 0;
   }
 
-  @override
   void dispose() {
     _timer?.cancel();
-    super.dispose();
   }
 }
 
-final timerControllerProvider = StateNotifierProvider<TimerController, int>((
-  ref,
-) {
-  return TimerController(ref);
+final timerControllerProvider = Provider<TimerController>((ref) {
+  final controller = TimerController(ref);
+  ref.onDispose(controller.dispose);
+  return controller;
 });

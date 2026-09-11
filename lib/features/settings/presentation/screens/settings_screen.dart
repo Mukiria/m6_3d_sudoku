@@ -20,6 +20,7 @@ class SettingsScreen extends ConsumerWidget {
         title: const Text('Settings'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
+          tooltip: 'Back',
           onPressed: () => context.pop(),
         ),
       ),
@@ -185,6 +186,13 @@ class SettingsScreen extends ConsumerWidget {
               subtitle: 'Read our terms of service',
               onTap:
                   () => _launchUrl('https://msixv.com/games/terms-of-service'),
+            ),
+            _buildSettingTile(
+              context,
+              icon: Icons.help_rounded,
+              title: 'Support',
+              subtitle: 'Get help or contact us',
+              onTap: () => _launchUrl('https://msixv.com/support'),
             ),
             _buildSettingTile(
               context,

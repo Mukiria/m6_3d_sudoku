@@ -252,16 +252,44 @@ class _SudokuCell extends StatelessWidget {
         },
         child: Material(
           color: Colors.transparent,
-          child: InkWell(
-            onTap: () => onCellTap(row, col),
-            onLongPress: () => onCellLongPress(row, col),
-            splashColor: colorScheme.primary.withValues(alpha: 0.12),
-            highlightColor: colorScheme.primary.withValues(alpha: 0.06),
-            child: Center(child: _buildContent()),
+          child: Semantics(
+            label: _semanticsLabel,
+            value: _semanticsValue,
+            selected: isSelected,
+            button: true,
+            child: InkWell(
+              onTap: () => onCellTap(row, col),
+              onLongPress: () => onCellLongPress(row, col),
+              splashColor: colorScheme.primary.withValues(alpha: 0.12),
+              highlightColor: colorScheme.primary.withValues(alpha: 0.06),
+              // The visual content below (a bare digit, or a grid of note
+              // digits) would otherwise surface as its own, uncoordinated
+              // semantics nodes — excluded so the single label/value above
+              // is what a screen reader actually reports for this cell.
+              child: Center(child: ExcludeSemantics(child: _buildContent())),
+            ),
           ),
         ),
       ),
     );
+  }
+
+  /// "Row 3, column 5, given" / "..., conflicts with another cell" — the
+  /// conflict callout here is also this cell's non-color indicator for
+  /// screen-reader users; [_border] gives sighted users an equivalent
+  /// non-color (shape-based) cue for the same state.
+  String get _semanticsLabel {
+    final parts = ['Row ${row + 1}, column ${col + 1}'];
+    if (isFixed) parts.add('given');
+    if (isConflicted) parts.add('conflicts with another cell');
+    return parts.join(', ');
+  }
+
+  String get _semanticsValue {
+    if (value != null) return value.toString();
+    if (cellNotes.isEmpty) return 'empty';
+    final sorted = cellNotes.toList()..sort();
+    return 'candidate notes ${sorted.join(', ')}';
   }
 
   /// The color this cell settles at once its highlight (if any) has fully
@@ -290,7 +318,16 @@ class _SudokuCell extends StatelessWidget {
   /// 3x3 boxes. Only the right/bottom edges are drawn — the last row/column
   /// of a box relies on the outer board border instead — so no two cells
   /// ever draw overlapping edges of differing widths.
+  ///
+  /// A conflicted cell breaks that pattern deliberately: it gets a full
+  /// boxed outline on all four sides, not just a color change, so the
+  /// conflict reads by shape as well as by hue for players who can't rely
+  /// on color alone to tell it apart from the selection highlight.
   Border _border() {
+    if (isConflicted) {
+      return Border.all(color: extension.cellErrorBorder, width: 2.0);
+    }
+
     final thin = BorderSide(color: extension.cellBorder, width: 1.0);
     final thick = BorderSide(color: extension.subGridLineColor, width: 2.0);
 
@@ -374,8 +411,17 @@ class _NotesGrid extends StatelessWidget {
   final Set<int> notes;
   final double cellSize;
 
+  // grey.shade400 against the light-theme cell background (#FFFFFF) computes
+  // to ~1.88:1 — well under the 4.5:1 WCAG 1.4.3 requires at this size.
+  // Against the dark-theme background (#2C2C2C) the same grey is ~7.44:1,
+  // comfortably fine, so only the light-theme value needs to change.
+  static const Color _noteColorLight = Color(0xFF6B6B6B); // ~5.3:1 on white
+  static const Color _noteColorDark = Color(0xFFBDBDBD); // grey.shade400
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final noteColor = isDark ? _noteColorDark : _noteColorLight;
     final unit = cellSize / AppConstants.subGridSize;
     final fontSize = (unit * 0.6).clamp(7.0, 13.0);
 
@@ -402,7 +448,7 @@ class _NotesGrid extends StatelessWidget {
                           style: TextStyle(
                             fontSize: fontSize,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade400,
+                            color: noteColor,
                             height: 1.0,
                           ),
                         ),

@@ -25,7 +25,11 @@ class GameTopBar extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          _CircleIconButton(icon: Icons.arrow_back_rounded, onTap: onBack),
+          _CircleIconButton(
+            icon: Icons.arrow_back_rounded,
+            tooltip: 'Back',
+            onTap: onBack,
+          ),
           const Spacer(),
           _CircleIconButton(
             icon: Icons.palette_outlined,
@@ -50,9 +54,9 @@ class GameTopBar extends ConsumerWidget {
   }
 
   Future<void> _visit(BuildContext context, WidgetRef ref, String route) async {
-    ref.read(timerControllerProvider.notifier).pause();
+    ref.read(timerControllerProvider).pause();
     await context.push(route);
-    ref.read(timerControllerProvider.notifier).start();
+    ref.read(timerControllerProvider).start();
   }
 
   void _cycleTheme(BuildContext context, WidgetRef ref) {
@@ -74,19 +78,25 @@ class _CircleIconButton extends StatelessWidget {
   const _CircleIconButton({
     required this.icon,
     required this.onTap,
-    this.tooltip,
+    required this.tooltip,
   });
 
   final IconData icon;
   final VoidCallback onTap;
-  final String? tooltip;
+
+  /// Required, not optional — an icon-only circular button with no
+  /// tooltip has no accessible name at all (this used to be nullable,
+  /// defaulting to an empty-string Tooltip message, which is exactly how
+  /// the back button on every gameplay screen ended up silent to screen
+  /// readers).
+  final String tooltip;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Tooltip(
-      message: tooltip ?? '',
+      message: tooltip,
       child: Material(
         color: colorScheme.surface,
         shape: const CircleBorder(),

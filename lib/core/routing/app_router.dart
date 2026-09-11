@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
+import 'package:m6_sudoku/features/cube_sudoku/domain/entities/cube_face.dart';
+import 'package:m6_sudoku/features/cube_sudoku/presentation/screens/cube_completion_screen.dart';
+import 'package:m6_sudoku/features/cube_sudoku/presentation/screens/cube_difficulty_selection_screen.dart';
+import 'package:m6_sudoku/features/cube_sudoku/presentation/screens/cube_game_screen.dart';
+import 'package:m6_sudoku/features/cube_sudoku/presentation/screens/cube_puzzle_loading_screen.dart';
 import 'package:m6_sudoku/features/home/presentation/screens/home_screen.dart';
+import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/screens/game_screen.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/screens/difficulty_selection_screen.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/screens/completion_screen.dart';
@@ -219,6 +225,86 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               },
             ),
       ),
+
+      // 3D Sudoku — a new mode alongside the regular game, not a
+      // replacement for it.
+      GoRoute(
+        path: AppRoutes.cubeDifficulty,
+        name: 'cubeDifficulty',
+        pageBuilder:
+            (context, state) =>
+                const MaterialPage(child: CubeDifficultySelectionScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.cubePuzzleLoading,
+        name: 'cubePuzzleLoading',
+        pageBuilder: (context, state) {
+          final difficulties =
+              state.extra as Map<CubeFace, Difficulty>? ??
+              {for (final face in CubeFace.values) face: Difficulty.medium};
+          return MaterialPage(
+            child: CubePuzzleLoadingScreen(difficulties: difficulties),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.cubeGame,
+        name: 'cubeGame',
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const CubeGameScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.cubeCompletion,
+        name: 'cubeCompletion',
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const CubeCompletionScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
     ],
     errorBuilder:
         (context, state) => Scaffold(
@@ -262,6 +348,10 @@ class AppRoutes {
   static const String puzzleLoading = '/loading';
   static const String dailyChallenge = '/daily';
   static const String achievements = '/achievements';
+  static const String cubeDifficulty = '/cube-difficulty';
+  static const String cubePuzzleLoading = '/cube-loading';
+  static const String cubeGame = '/cube-game';
+  static const String cubeCompletion = '/cube-completion';
 
   static String get homeRoute => home;
   static String get difficultyRoute => difficultySelection;

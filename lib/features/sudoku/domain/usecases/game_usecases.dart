@@ -3,6 +3,7 @@ import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
 import 'package:m6_sudoku/core/errors/failures.dart';
 import 'package:m6_sudoku/features/sudoku/domain/repositories/puzzle_repository.dart';
+import 'package:m6_sudoku/features/sudoku/engine/candidates.dart';
 
 class HintCell {
   const HintCell({
@@ -105,15 +106,19 @@ class GetHintUseCase {
 
   Future<Either<Failure, HintCell?>> call({required GameState state}) async {
     final puzzle = state.puzzle;
+    // Computed once per call (bitmask sweep — see engine/candidates.dart)
+    // instead of re-deriving each cell's candidates from scratch on every
+    // lookup inside the naked/hidden-single scans below.
+    final candidateGrid = computeCandidateGrid(state.userGrid, puzzle.grid);
 
     // First try to find a logical hint (naked single)
-    final logicalHint = _findNakedSingle(state);
+    final logicalHint = _findNakedSingle(state, candidateGrid);
     if (logicalHint != null) {
       return Right(logicalHint);
     }
 
     // Then try hidden single
-    final hiddenHint = _findHiddenSingle(state);
+    final hiddenHint = _findHiddenSingle(state, candidateGrid);
     if (hiddenHint != null) {
       return Right(hiddenHint);
     }
@@ -139,12 +144,15 @@ class GetHintUseCase {
     return const Right(null);
   }
 
-  HintCell? _findNakedSingle(GameState state) {
+  HintCell? _findNakedSingle(
+    GameState state,
+    List<List<Set<int>>> candidateGrid,
+  ) {
     final puzzle = state.puzzle;
     for (int r = 0; r < 9; r++) {
       for (int c = 0; c < 9; c++) {
         if (state.userGrid[r][c] == 0 && puzzle.grid[r][c] == 0) {
-          final candidates = _getCandidates(state, r, c);
+          final candidates = candidateGrid[r][c];
           if (candidates.length == 1) {
             return HintCell(
               row: r,
@@ -162,7 +170,10 @@ class GetHintUseCase {
     return null;
   }
 
-  HintCell? _findHiddenSingle(GameState state) {
+  HintCell? _findHiddenSingle(
+    GameState state,
+    List<List<Set<int>>> candidateGrid,
+  ) {
     final puzzle = state.puzzle;
     // Check rows
     for (int r = 0; r < 9; r++) {
@@ -171,7 +182,7 @@ class GetHintUseCase {
         int? lastCol;
         for (int c = 0; c < 9; c++) {
           if (state.userGrid[r][c] == 0 && puzzle.grid[r][c] == 0) {
-            final candidates = _getCandidates(state, r, c);
+            final candidates = candidateGrid[r][c];
             if (candidates.contains(digit)) {
               count++;
               lastCol = c;
@@ -198,7 +209,7 @@ class GetHintUseCase {
         int? lastRow;
         for (int r = 0; r < 9; r++) {
           if (state.userGrid[r][c] == 0 && puzzle.grid[r][c] == 0) {
-            final candidates = _getCandidates(state, r, c);
+            final candidates = candidateGrid[r][c];
             if (candidates.contains(digit)) {
               count++;
               lastRow = r;
@@ -230,7 +241,7 @@ class GetHintUseCase {
               final cellC = boxCol * 3 + c;
               if (state.userGrid[cellR][cellC] == 0 &&
                   puzzle.grid[cellR][cellC] == 0) {
-                final candidates = _getCandidates(state, cellR, cellC);
+                final candidates = candidateGrid[cellR][cellC];
                 if (candidates.contains(digit)) {
                   count++;
                   lastR = cellR;
@@ -256,42 +267,6 @@ class GetHintUseCase {
     return null;
   }
 
-  List<int> _getCandidates(GameState state, int row, int col) {
-    final puzzle = state.puzzle;
-    final candidates = <int>{};
-    for (int d = 1; d <= 9; d++) {
-      candidates.add(d);
-    }
-    // Remove from row
-    for (int c = 0; c < 9; c++) {
-      final val =
-          state.userGrid[row][c] != 0
-              ? state.userGrid[row][c]
-              : puzzle.grid[row][c];
-      if (val != 0) candidates.remove(val);
-    }
-    // Remove from column
-    for (int r = 0; r < 9; r++) {
-      final val =
-          state.userGrid[r][col] != 0
-              ? state.userGrid[r][col]
-              : puzzle.grid[r][col];
-      if (val != 0) candidates.remove(val);
-    }
-    // Remove from box
-    final boxRow = (row ~/ 3) * 3;
-    final boxCol = (col ~/ 3) * 3;
-    for (int r = boxRow; r < boxRow + 3; r++) {
-      for (int c = boxCol; c < boxCol + 3; c++) {
-        final val =
-            state.userGrid[r][c] != 0
-                ? state.userGrid[r][c]
-                : puzzle.grid[r][c];
-        if (val != 0) candidates.remove(val);
-      }
-    }
-    return candidates.toList();
-  }
 }
 
 class GetGameStateUseCase {

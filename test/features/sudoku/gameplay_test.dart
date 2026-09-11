@@ -90,6 +90,14 @@ class FakeGetHintUseCase extends GetHintUseCase {
 }
 
 void main() {
+  // GameController now calls SemanticsService.announce on mistakes,
+  // completion, and hints — that reaches a platform channel via
+  // ServicesBinding.instance, which only exists once a Flutter binding is
+  // initialized. The real app gets this for free from
+  // WidgetsFlutterBinding.ensureInitialized() in main(); these plain
+  // ProviderContainer-based tests need the test equivalent explicitly.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('GameController - Gameplay Tests', () {
     late ProviderContainer container;
 
@@ -628,6 +636,45 @@ void main() {
         }
       });
 
+      test('redo reapplies an undone clear (not the pre-clear value)', () async {
+        final controller = container.read(gameControllerProvider.notifier);
+        await controller.newGame(Difficulty.easy);
+
+        final state = container.read(gameControllerProvider);
+        int? emptyRow, emptyCol;
+        int correctValue = 0;
+        for (int r = 0; r < 9; r++) {
+          for (int c = 0; c < 9; c++) {
+            if (state!.userGrid[r][c] == 0 && state.puzzle.grid[r][c] == 0) {
+              emptyRow = r;
+              emptyCol = c;
+              correctValue = state.puzzle.solution[r][c];
+              break;
+            }
+          }
+          if (emptyRow != null) break;
+        }
+
+        if (emptyRow != null) {
+          controller.selectCell(emptyRow!, emptyCol!);
+          controller.setValue(emptyRow!, emptyCol!, correctValue);
+          controller.clearCell(emptyRow!, emptyCol!);
+
+          final stateAfterClear = container.read(gameControllerProvider);
+          expect(stateAfterClear!.userGrid[emptyRow!][emptyCol!], 0);
+
+          controller.undo();
+          final stateAfterUndo = container.read(gameControllerProvider);
+          expect(stateAfterUndo!.userGrid[emptyRow!][emptyCol!], correctValue);
+
+          controller.redo();
+          final stateAfterRedo = container.read(gameControllerProvider);
+          // Regression check: redoing a clear must re-clear the cell (0),
+          // not silently restore the pre-clear value again.
+          expect(stateAfterRedo!.userGrid[emptyRow!][emptyCol!], 0);
+        }
+      });
+
       test('undo clears redo stack on new move', () async {
         final controller = container.read(gameControllerProvider.notifier);
         await controller.newGame(Difficulty.easy);
@@ -654,6 +701,39 @@ void main() {
 
           // Make a new move
           controller.setValue(emptyRow!, emptyCol!, correctValue);
+
+          final newState = container.read(gameControllerProvider);
+          expect(newState!.redoStack, isEmpty);
+        }
+      });
+
+      test('clearCell also clears redo stack on new move', () async {
+        final controller = container.read(gameControllerProvider.notifier);
+        await controller.newGame(Difficulty.easy);
+
+        final state = container.read(gameControllerProvider);
+        int? emptyRow, emptyCol;
+        int correctValue = 0;
+        for (int r = 0; r < 9; r++) {
+          for (int c = 0; c < 9; c++) {
+            if (state!.userGrid[r][c] == 0 && state.puzzle.grid[r][c] == 0) {
+              emptyRow = r;
+              emptyCol = c;
+              correctValue = state.puzzle.solution[r][c];
+              break;
+            }
+          }
+          if (emptyRow != null) break;
+        }
+
+        if (emptyRow != null) {
+          controller.selectCell(emptyRow!, emptyCol!);
+          controller.setValue(emptyRow!, emptyCol!, correctValue);
+          controller.undo();
+
+          // A stale redo entry exists here; clearing a (different) cell
+          // should still invalidate it, the same way a new setValue does.
+          controller.clearCell(emptyRow!, emptyCol!);
 
           final newState = container.read(gameControllerProvider);
           expect(newState!.redoStack, isEmpty);

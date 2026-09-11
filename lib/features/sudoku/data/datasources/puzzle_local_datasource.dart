@@ -1,18 +1,22 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:dartz/dartz.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
 import 'package:m6_sudoku/features/sudoku/engine/generator/puzzle_generator.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 import 'package:m6_sudoku/core/errors/failures.dart';
+import 'package:m6_sudoku/core/services/json_store.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';
 
 class PuzzleLocalDataSource {
   PuzzleLocalDataSource(this._storage, [PuzzleGenerator? generator])
-    : _generator = generator ?? PuzzleGenerator();
+    : _generator = generator ?? PuzzleGenerator(),
+      _json = JsonStore(_storage);
 
   final StorageService _storage;
   final PuzzleGenerator _generator;
+  final JsonStore _json;
 
   static const String _puzzleKey = 'current_puzzle';
   static const String _gameStateKey = 'game_state';
@@ -30,7 +34,7 @@ class PuzzleLocalDataSource {
       }
 
       // Generate new puzzle if no cache available
-      final puzzle = _generatePuzzleForDifficulty(difficulty);
+      final puzzle = await _generatePuzzleForDifficulty(difficulty);
       await _storage.setString(_puzzleKey, jsonEncode(puzzle.toJson()));
       await _cachePuzzle(puzzle);
       return Right(puzzle);
@@ -72,23 +76,16 @@ class PuzzleLocalDataSource {
   }
 
   Future<Either<Failure, Puzzle?>> getCurrentPuzzle() async {
-    try {
-      final jsonString = _storage.getString(_puzzleKey);
-      if (jsonString == null) return const Right(null);
-      final map = jsonDecode(jsonString) as Map<String, dynamic>;
-      return Right(Puzzle.fromJson(map));
-    } catch (e) {
-      return Left(CacheFailure('Failed to get current puzzle: $e'));
-    }
+    return _json.readJson(
+      _puzzleKey,
+      (decoded) => Puzzle.fromJson(decoded as Map<String, dynamic>),
+      () => null,
+      'get current puzzle',
+    );
   }
 
-  Future<Either<Failure, void>> savePuzzle(Puzzle puzzle) async {
-    try {
-      await _storage.setString(_puzzleKey, jsonEncode(puzzle.toJson()));
-      return const Right(null);
-    } catch (e) {
-      return Left(StorageFailure('Failed to save puzzle: $e'));
-    }
+  Future<Either<Failure, void>> savePuzzle(Puzzle puzzle) {
+    return _json.writeJson(_puzzleKey, puzzle.toJson(), 'save puzzle');
   }
 
   Future<Either<Failure, GameState?>> getGameState() async {
@@ -115,39 +112,34 @@ class PuzzleLocalDataSource {
     }
   }
 
-  Future<Either<Failure, void>> saveGameState(GameState state) async {
-    try {
-      final versioned = state.copyWith(
-        saveVersion: GameState.currentSaveVersion,
-      );
-      await _storage.setString(_gameStateKey, jsonEncode(versioned.toJson()));
-      return const Right(null);
-    } catch (e) {
-      return Left(StorageFailure('Failed to save game state: $e'));
-    }
+  Future<Either<Failure, void>> saveGameState(GameState state) {
+    final versioned = state.copyWith(
+      saveVersion: GameState.currentSaveVersion,
+    );
+    return _json.writeJson(
+      _gameStateKey,
+      versioned.toJson(),
+      'save game state',
+    );
   }
 
-  Future<Either<Failure, void>> clearGameState() async {
-    try {
-      await _storage.remove(_gameStateKey);
-      await _storage.remove(_puzzleKey);
-      return const Right(null);
-    } catch (e) {
-      return Left(StorageFailure('Failed to clear game state: $e'));
-    }
+  Future<Either<Failure, void>> clearGameState() {
+    return _json.removeKeys(
+      [_gameStateKey, _puzzleKey],
+      'clear game state',
+    );
   }
 
   Future<Either<Failure, List<Puzzle>>> getPuzzleHistory() async {
-    try {
-      final jsonString = _storage.getString(_historyKey);
-      if (jsonString == null) return const Right([]);
-      final list = jsonDecode(jsonString) as List;
-      return Right(
-        list.map((e) => Puzzle.fromJson(e as Map<String, dynamic>)).toList(),
-      );
-    } catch (e) {
-      return Left(CacheFailure('Failed to get puzzle history: $e'));
-    }
+    return _json.readJson(
+      _historyKey,
+      (decoded) =>
+          (decoded as List)
+              .map((e) => Puzzle.fromJson(e as Map<String, dynamic>))
+              .toList(),
+      () => <Puzzle>[],
+      'get puzzle history',
+    );
   }
 
   Future<Either<Failure, void>> savePuzzleToHistory(Puzzle puzzle) async {
@@ -166,21 +158,25 @@ class PuzzleLocalDataSource {
     }
   }
 
-  Puzzle _generatePuzzleForDifficulty(String difficulty) {
+  // Runs off the UI isolate via compute() — see generatePuzzleInBackground's
+  // doc comment for why: this backtracking generation can take long enough
+  // (Expert/Evil especially) to visibly freeze the UI if run in place.
+  Future<Puzzle> _generatePuzzleForDifficulty(String difficulty) async {
     final parsedDifficulty = Difficulty.values.firstWhere(
       (d) => d.name == difficulty,
       orElse: () => Difficulty.medium,
     );
-    final (:puzzle, :solution) = _generator.generatePuzzleWithSolution(
-      parsedDifficulty,
-    );
+    final result = await compute(generatePuzzleInBackground, (
+      difficulty: parsedDifficulty,
+      seed: _generator.seed,
+    ));
 
     return Puzzle(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      grid: puzzle.toGrid(),
-      solution: solution.toGrid(),
+      grid: result.grid,
+      solution: result.solution,
       difficulty: difficulty,
-      cluesCount: puzzle.filledCount,
+      cluesCount: result.cluesCount,
       createdAt: DateTime.now(),
     );
   }

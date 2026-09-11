@@ -181,6 +181,17 @@ final incrementAchievementProgressUseCaseProvider =
       return IncrementAchievementProgressUseCase(repo);
     });
 
+final incrementAchievementProgressBatchUseCaseProvider =
+    Provider<IncrementAchievementProgressBatchUseCase>((ref) {
+      final repo = ref.read(achievementRepositoryProvider);
+      return IncrementAchievementProgressBatchUseCase(repo);
+    });
+
+final evaluateAchievementDeltasUseCaseProvider =
+    Provider<EvaluateAchievementDeltasUseCase>((ref) {
+      return EvaluateAchievementDeltasUseCase();
+    });
+
 final getUnlockedAchievementsUseCaseProvider =
     Provider<GetUnlockedAchievementsUseCase>((ref) {
       final repo = ref.read(achievementRepositoryProvider);

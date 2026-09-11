@@ -33,6 +33,13 @@ class AchievementRepositoryImpl implements AchievementRepository {
   }
 
   @override
+  Future<Either<Failure, List<Achievement>>> incrementProgressBatch(
+    Map<String, int> deltas,
+  ) {
+    return _dataSource.incrementProgressBatch(deltas);
+  }
+
+  @override
   Future<Either<Failure, List<Achievement>>> getUnlockedAchievements() {
     return _dataSource.getUnlockedAchievements();
   }

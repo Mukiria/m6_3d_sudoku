@@ -27,14 +27,29 @@ class NumberPad extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final gameState = ref.watch(gameControllerProvider);
+    // Scoped to just the fields this widget renders, via a record, so
+    // NumberPad doesn't rebuild on every unrelated GameState change (most
+    // notably the once-a-second timer tick, which used to rebuild this
+    // whole widget for a value it never reads).
+    final selection = ref.watch(
+      gameControllerProvider.select(
+        (s) =>
+            s == null
+                ? null
+                : (
+                  hintsUsed: s.hintsUsed,
+                  hasHistory: s.moveHistory.isNotEmpty,
+                  selectedCell: s.selectedCell,
+                ),
+      ),
+    );
     final showPencilMarks = ref.watch(showPencilMarksProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (gameState == null) return const SizedBox.shrink();
+    if (selection == null) return const SizedBox.shrink();
 
-    final hintsRemaining = (3 - gameState.hintsUsed).clamp(0, 3);
+    final hintsRemaining = (3 - selection.hintsUsed).clamp(0, 3);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -45,16 +60,16 @@ class NumberPad extends ConsumerWidget {
             _ActionButton(
               icon: Icons.undo_rounded,
               label: 'Undo',
-              isEnabled: gameState.moveHistory.isNotEmpty,
+              isEnabled: selection.hasHistory,
               onTap: () => ref.read(gameControllerProvider.notifier).undo(),
               colorScheme: colorScheme,
             ),
             _ActionButton(
               icon: Icons.backspace_outlined,
               label: 'Erase',
-              isEnabled: gameState.selectedCell != null,
+              isEnabled: selection.selectedCell != null,
               onTap: () {
-                final cell = gameState.selectedCell;
+                final cell = selection.selectedCell;
                 if (cell != null) {
                   ref
                       .read(gameControllerProvider.notifier)

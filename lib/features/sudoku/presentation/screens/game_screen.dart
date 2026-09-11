@@ -50,7 +50,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _startSession();
-      ref.read(timerControllerProvider.notifier).start();
+      ref.read(timerControllerProvider).start();
     });
   }
 
@@ -132,7 +132,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
     if (gameState.status == GameStatus.completed) {
       _hasNavigated = true;
-      ref.read(timerControllerProvider.notifier).pause();
+      ref.read(timerControllerProvider).pause();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           context.go(
@@ -148,7 +148,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
       });
     } else if (gameState.status == GameStatus.failed) {
       _hasNavigated = true;
-      ref.read(timerControllerProvider.notifier).pause();
+      ref.read(timerControllerProvider).pause();
       _showGameOverDialog();
     }
   }
@@ -175,8 +175,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
                   // Game-over state is never GameStatus.playing, so
                   // _startSession always reloads a fresh session here.
                   await _startSession();
-                  ref.read(timerControllerProvider.notifier).reset();
-                  ref.read(timerControllerProvider.notifier).start();
+                  ref.read(timerControllerProvider).reset();
+                  ref.read(timerControllerProvider).start();
                   _hasNavigated = false;
                 },
                 child: const Text('Try Again'),
@@ -217,23 +217,43 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
   @override
   Widget build(BuildContext context) {
-    final gameState = ref.watch(gameControllerProvider);
-    final showPencilMarks = ref.watch(showPencilMarksProvider);
+    // Only the "is there a session at all" bit is watched here — everything
+    // else below is read per-section via its own Consumer + select, so a
+    // change to one slice of GameState (most notably the once-a-second
+    // timer tick) only rebuilds the small section that actually displays
+    // it, instead of tearing down and rebuilding the whole screen —
+    // including the 81-cell SudokuBoard — every second.
+    final hasSession = ref.watch(
+      gameControllerProvider.select((s) => s != null),
+    );
 
     ref.listen<GameState?>(gameControllerProvider, (previous, next) {
       if (next?.selectedCell != previous?.selectedCell) {
         setState(() => _selectionEpoch++);
       }
+      if (next != null &&
+          (next.status != previous?.status ||
+              next.hintState != previous?.hintState)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _checkGameStatus(next);
+          _checkHintState(next);
+        });
+      }
     });
 
-    if (gameState == null) {
+    if (!hasSession) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // Check game status after build
+    // Covers the case where a session is already present on the very first
+    // build (e.g. resumed via "Continue"), which the status/hintState-delta
+    // listen above wouldn't fire for on its own.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkGameStatus(gameState);
-      _checkHintState(gameState);
+      final gameState = ref.read(gameControllerProvider);
+      if (gameState != null) {
+        _checkGameStatus(gameState);
+        _checkHintState(gameState);
+      }
     });
 
     final colorScheme = Theme.of(context).colorScheme;
@@ -253,55 +273,115 @@ class _GameScreenState extends ConsumerState<GameScreen>
               child: Column(
                 children: [
                   GameTopBar(onBack: _showPauseOverlay),
-                  GameHeader(
-                    difficulty:
-                        gameState.puzzleId.startsWith('daily_')
-                            ? 'daily'
-                            : gameState.difficulty.name,
-                    timeElapsed: gameState.timeElapsed,
-                    mistakes: gameState.mistakes,
-                    onPause: _showPauseOverlay,
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final header = ref.watch(
+                        gameControllerProvider.select(
+                          (s) => (
+                            difficulty:
+                                s!.puzzleId.startsWith('daily_')
+                                    ? 'daily'
+                                    : s.difficulty.name,
+                            timeElapsed: s.timeElapsed,
+                            mistakes: s.mistakes,
+                          ),
+                        ),
+                      );
+                      return GameHeader(
+                        difficulty: header.difficulty,
+                        timeElapsed: header.timeElapsed,
+                        mistakes: header.mistakes,
+                        onPause: _showPauseOverlay,
+                      );
+                    },
                   ),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppConstants.spacingSm,
                       ),
-                      child: SudokuBoard(
-                        puzzle: gameState.puzzle,
-                        userGrid: gameState.userGrid,
-                        notes:
-                            showPencilMarks
-                                ? gameState.notes
-                                : _emptyNotesGrid(),
-                        selectedCell: gameState.selectedCell,
-                        highlightedCells: gameState.highlightedCells,
-                        conflictCells: gameState.conflictCells,
-                        isNoteMode: gameState.isNoteMode,
-                        selectionEpoch: _selectionEpoch,
-                        onCellTap:
-                            (row, col) => ref
-                                .read(gameControllerProvider.notifier)
-                                .selectCell(row, col),
-                        onCellLongPress:
-                            (row, col) => _showCellOptions(row, col, gameState),
+                      child: Consumer(
+                        builder: (context, ref, _) {
+                          final board = ref.watch(
+                            gameControllerProvider.select(
+                              (s) => (
+                                puzzle: s!.puzzle,
+                                userGrid: s.userGrid,
+                                notes: s.notes,
+                                selectedCell: s.selectedCell,
+                                highlightedCells: s.highlightedCells,
+                                conflictCells: s.conflictCells,
+                                isNoteMode: s.isNoteMode,
+                              ),
+                            ),
+                          );
+                          final showPencilMarks = ref.watch(
+                            showPencilMarksProvider,
+                          );
+                          return SudokuBoard(
+                            puzzle: board.puzzle,
+                            userGrid: board.userGrid,
+                            notes:
+                                showPencilMarks
+                                    ? board.notes
+                                    : _emptyNotesGrid(),
+                            selectedCell: board.selectedCell,
+                            highlightedCells: board.highlightedCells,
+                            conflictCells: board.conflictCells,
+                            isNoteMode: board.isNoteMode,
+                            selectionEpoch: _selectionEpoch,
+                            onCellTap:
+                                (row, col) => ref
+                                    .read(gameControllerProvider.notifier)
+                                    .selectCell(row, col),
+                            onCellLongPress: (row, col) {
+                              final gameState = ref.read(
+                                gameControllerProvider,
+                              );
+                              if (gameState != null) {
+                                _showCellOptions(row, col, gameState);
+                              }
+                            },
+                          );
+                        },
                       ),
                     ),
                   ),
                   const SizedBox(height: AppConstants.spacingMd),
-                  NumberPad(
-                    selectedNumber: gameState.selectedNumber,
-                    onNumberSelected:
-                        (number) => ref
-                            .read(gameControllerProvider.notifier)
-                            .selectNumber(number),
-                    onNoteModeToggle:
-                        () =>
-                            ref
+                  Consumer(
+                    builder: (context, ref, _) {
+                      // userGrid is selected raw (not the derived
+                      // disabledNumbers set) so this only recomputes when
+                      // the grid's object identity actually changes —
+                      // GameState.copyWith keeps the same userGrid reference
+                      // for fields it isn't touching (e.g. every timer
+                      // tick), and a freshly-allocated Set built inside the
+                      // selector itself would never compare equal across
+                      // calls, defeating select's dedup entirely.
+                      final pad = ref.watch(
+                        gameControllerProvider.select(
+                          (s) => (
+                            selectedNumber: s!.selectedNumber,
+                            isNoteMode: s.isNoteMode,
+                            userGrid: s.userGrid,
+                          ),
+                        ),
+                      );
+                      return NumberPad(
+                        selectedNumber: pad.selectedNumber,
+                        onNumberSelected:
+                            (number) => ref
                                 .read(gameControllerProvider.notifier)
-                                .toggleNoteMode(),
-                    isNoteMode: gameState.isNoteMode,
-                    disabledNumbers: _getDisabledNumbers(gameState),
+                                .selectNumber(number),
+                        onNoteModeToggle:
+                            () =>
+                                ref
+                                    .read(gameControllerProvider.notifier)
+                                    .toggleNoteMode(),
+                        isNoteMode: pad.isNoteMode,
+                        disabledNumbers: _getDisabledNumbers(pad.userGrid),
+                      );
+                    },
                   ),
                   const SizedBox(height: AppConstants.spacingMd),
                 ],
@@ -364,11 +444,11 @@ class _GameScreenState extends ConsumerState<GameScreen>
     );
   }
 
-  Map<int, int> _getNumberCounts(GameState state) {
+  Map<int, int> _getNumberCounts(List<List<int>> userGrid) {
     final counts = <int, int>{};
     for (int r = 0; r < 9; r++) {
       for (int c = 0; c < 9; c++) {
-        final val = state.userGrid[r][c];
+        final val = userGrid[r][c];
         if (val != 0) {
           counts[val] = (counts[val] ?? 0) + 1;
         }
@@ -382,9 +462,9 @@ class _GameScreenState extends ConsumerState<GameScreen>
     return remaining;
   }
 
-  Set<int> _getDisabledNumbers(GameState state) {
+  Set<int> _getDisabledNumbers(List<List<int>> userGrid) {
     final disabled = <int>{};
-    final counts = _getNumberCounts(state);
+    final counts = _getNumberCounts(userGrid);
     for (int i = 1; i <= 9; i++) {
       if ((counts[i] ?? 9) <= 0) {
         disabled.add(i);

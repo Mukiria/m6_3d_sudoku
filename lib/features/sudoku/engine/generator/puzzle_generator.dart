@@ -4,6 +4,40 @@ import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 import '../models/board.dart';
 import '../solver/sudoku_solver.dart';
 
+/// Input for [generatePuzzleInBackground]. Kept to plain, isolate-sendable
+/// fields only (an enum and a nullable int) — no closures, no [Board] or
+/// [PuzzleGenerator] instances — since this crosses an isolate boundary via
+/// [compute].
+typedef PuzzleGenerationRequest = ({Difficulty difficulty, int? seed});
+
+/// Raw output of [generatePuzzleInBackground]: just the two grids and the
+/// clue count. Callers wrap this into their own `Puzzle` entity, since the
+/// `id`/`createdAt`/difficulty-label differ between a regular new game and
+/// the deterministic daily challenge.
+typedef PuzzleGenerationResult =
+    ({List<List<int>> grid, List<List<int>> solution, int cluesCount});
+
+/// Top-level [compute] entry point that runs puzzle generation off the UI
+/// isolate. Generation is a backtracking solve plus, depending on
+/// difficulty, up to ~200 clue-removal attempts each re-verifying unique
+/// solvability with a second recursive solve — expensive enough (especially
+/// on Expert/Evil) to visibly freeze the UI if run in-place on "New Game".
+/// `compute` requires a top-level or static function, which is why this
+/// isn't a method on [PuzzleGenerator].
+PuzzleGenerationResult generatePuzzleInBackground(
+  PuzzleGenerationRequest request,
+) {
+  final generator = PuzzleGenerator(seed: request.seed);
+  final (:puzzle, :solution) = generator.generatePuzzleWithSolution(
+    request.difficulty,
+  );
+  return (
+    grid: puzzle.toGrid(),
+    solution: solution.toGrid(),
+    cluesCount: puzzle.filledCount,
+  );
+}
+
 class PuzzleGenerator {
   PuzzleGenerator({this.seed});
 

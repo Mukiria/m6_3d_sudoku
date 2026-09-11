@@ -1,16 +1,19 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:dartz/dartz.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/daily_challenge.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 import 'package:m6_sudoku/features/sudoku/engine/generator/puzzle_generator.dart';
 import 'package:m6_sudoku/core/errors/failures.dart';
+import 'package:m6_sudoku/core/services/json_store.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';
 
 class DailyChallengeLocalDataSource {
-  DailyChallengeLocalDataSource(this._storage);
+  DailyChallengeLocalDataSource(this._storage) : _json = JsonStore(_storage);
 
   final StorageService _storage;
+  final JsonStore _json;
 
   static const String _dailyChallengeKey = 'daily_challenge_';
   static const String _dailyStatsKey = 'daily_challenge_stats';
@@ -25,7 +28,7 @@ class DailyChallengeLocalDataSource {
     }
 
     // Generate new puzzle for today
-    final puzzle = _generateDailyPuzzle(today);
+    final puzzle = await _generateDailyPuzzle(today);
     final challenge = DailyChallenge(
       date: today,
       puzzle: puzzle,
@@ -40,14 +43,14 @@ class DailyChallengeLocalDataSource {
   }
 
   Future<DailyChallenge?> _getDailyChallenge(String date) async {
-    try {
-      final jsonString = _storage.getString('$_dailyChallengeKey$date');
-      if (jsonString == null) return null;
-      final map = jsonDecode(jsonString) as Map<String, dynamic>;
-      return DailyChallenge.fromJson(map);
-    } catch (_) {
-      return null;
-    }
+    return _json
+        .readJson<DailyChallenge?>(
+          '$_dailyChallengeKey$date',
+          (decoded) => DailyChallenge.fromJson(decoded as Map<String, dynamic>),
+          () => null,
+          'get daily challenge',
+        )
+        .fold((_) => null, (challenge) => challenge);
   }
 
   Future<void> _saveDailyChallenge(DailyChallenge challenge) async {
@@ -109,14 +112,15 @@ class DailyChallengeLocalDataSource {
   }
 
   Future<DailyChallengeStats> _getStats() async {
-    try {
-      final jsonString = _storage.getString(_dailyStatsKey);
-      if (jsonString == null) return _defaultStats();
-      final map = jsonDecode(jsonString) as Map<String, dynamic>;
-      return DailyChallengeStats.fromJson(map);
-    } catch (_) {
-      return _defaultStats();
-    }
+    return _json
+        .readJson(
+          _dailyStatsKey,
+          (decoded) =>
+              DailyChallengeStats.fromJson(decoded as Map<String, dynamic>),
+          _defaultStats,
+          'get daily challenge stats',
+        )
+        .fold((_) => _defaultStats(), (stats) => stats);
   }
 
   DailyChallengeStats _defaultStats() {
@@ -138,37 +142,23 @@ class DailyChallengeLocalDataSource {
     return challenge?.isCompleted ?? false;
   }
 
-  Puzzle _generateDailyPuzzle(String date) {
-    // Generate deterministic seed from date
+  // Runs off the UI isolate via compute() — see generatePuzzleInBackground's
+  // doc comment for why. The seed makes generation deterministic per date,
+  // so every player gets the same puzzle regardless of which isolate solves
+  // it.
+  Future<Puzzle> _generateDailyPuzzle(String date) async {
     final seed = _dateToSeed(date);
-
-    // Use the puzzle generator with seed
-    final generator = PuzzleGenerator(seed: seed);
-    final board = generator.generatePuzzleWithDifficulty(Difficulty.medium);
-
-    // generateCompleteGrid() is deterministic per seed (see
-    // PuzzleGenerator), so a fresh call with the same seed reproduces the
-    // exact solved grid `board` above was derived from. This is needed
-    // because `board` only holds the blanked-out puzzle — reading a
-    // "solution" from it (as this used to) meant almost every cell of the
-    // solution was 0, so no entered digit could ever be judged correct.
-    final solutionBoard = PuzzleGenerator(seed: seed).generateCompleteGrid();
-
-    final grid = List.generate(
-      9,
-      (r) => List.generate(9, (c) => board.getValue(r, c)),
-    );
-    final solution = List.generate(
-      9,
-      (r) => List.generate(9, (c) => solutionBoard.getValue(r, c)),
-    );
+    final result = await compute(generatePuzzleInBackground, (
+      difficulty: Difficulty.medium,
+      seed: seed,
+    ));
 
     return Puzzle(
       id: 'daily_$date',
-      grid: grid,
-      solution: solution,
+      grid: result.grid,
+      solution: result.solution,
       difficulty: 'medium',
-      cluesCount: board.getFilledCount,
+      cluesCount: result.cluesCount,
       createdAt: DateTime.now(),
     );
   }

@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/core/routing/app_router.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
+import 'package:m6_sudoku/features/cube_sudoku/domain/entities/cube_game_state.dart';
+import 'package:m6_sudoku/features/cube_sudoku/presentation/providers/cube_game_provider.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/game_provider.dart';
 import 'package:m6_sudoku/shared/widgets/buttons.dart';
@@ -20,7 +22,11 @@ class HomeScreen extends ConsumerWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset('assets/images/m6-splash-screen.jpg', fit: BoxFit.cover),
+          Image.asset(
+            'assets/images/m6-splash-screen.jpg',
+            fit: BoxFit.cover,
+            excludeFromSemantics: true,
+          ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(AppConstants.spacingLg),
@@ -114,6 +120,55 @@ class HomeScreen extends ConsumerWidget {
                     },
                   ),
 
+                  const SizedBox(height: AppConstants.spacingMd),
+
+                  // 3D Sudoku — a separate mode with its own save slot (see
+                  // CubeGameLocalDataSource), so it gets its own
+                  // Continue/Play pair rather than sharing the one above.
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final cubeState = ref.watch(cubeGameControllerProvider);
+                      final hasSavedCube =
+                          cubeState != null && !cubeState.isComplete;
+
+                      return Column(
+                        children: [
+                          if (hasSavedCube) ...[
+                            AppButton(
+                                  onPressed:
+                                      () => _continueCube(
+                                        context,
+                                        ref,
+                                        cubeState!,
+                                      ),
+                                  variant: AppButtonVariant.outlined,
+                                  size: AppButtonSize.large,
+                                  icon: const Icon(Icons.view_in_ar_rounded),
+                                  child: const Text('Continue 3D Sudoku'),
+                                )
+                                .animate()
+                                .fadeIn(duration: 300.ms, delay: 350.ms)
+                                .slideX(begin: -0.2, end: 0),
+                            const SizedBox(height: AppConstants.spacingMd),
+                          ],
+                          AppButton(
+                                onPressed:
+                                    () => context.push(
+                                      AppRoutes.cubeDifficulty,
+                                    ),
+                                variant: AppButtonVariant.outlined,
+                                size: AppButtonSize.large,
+                                icon: const Icon(Icons.view_in_ar_rounded),
+                                child: const Text('Play 3D Sudoku'),
+                              )
+                              .animate()
+                              .fadeIn(duration: 300.ms, delay: 400.ms)
+                              .slideX(begin: 0.2, end: 0),
+                        ],
+                      );
+                    },
+                  ),
+
                   const SizedBox(height: AppConstants.spacingXl),
 
                   Row(
@@ -195,6 +250,15 @@ class HomeScreen extends ConsumerWidget {
     // 'continue' tells GameScreen the session is already loaded (regular or
     // daily) — it must not try to match/regenerate a puzzle from this string.
     context.push(AppRoutes.game, extra: 'continue');
+  }
+
+  void _continueCube(
+    BuildContext context,
+    WidgetRef ref,
+    CubeGameState cubeState,
+  ) {
+    ref.read(cubeGameControllerProvider.notifier).continueCubeGame(cubeState);
+    context.push(AppRoutes.cubeGame);
   }
 }
 

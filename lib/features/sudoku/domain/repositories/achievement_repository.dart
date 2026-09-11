@@ -13,6 +13,14 @@ abstract class AchievementRepository {
     String id,
     int amount,
   );
+
+  /// Applies every entry in [deltas] (achievement id → progress delta) in
+  /// one atomic read-modify-write, returning every achievement this call
+  /// unlocked (possibly empty). Prefer this over multiple [incrementProgress]
+  /// calls for achievements that can progress together from one event.
+  Future<Either<Failure, List<Achievement>>> incrementProgressBatch(
+    Map<String, int> deltas,
+  );
   Future<Either<Failure, List<Achievement>>> getUnlockedAchievements();
   Future<Either<Failure, List<Achievement>>> getLockedAchievements();
 }

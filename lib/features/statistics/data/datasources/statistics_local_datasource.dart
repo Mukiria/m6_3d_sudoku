@@ -1,79 +1,59 @@
-import 'dart:convert';
 import 'package:dartz/dartz.dart';
 import 'package:m6_sudoku/features/statistics/domain/entities/statistics.dart';
+import 'package:m6_sudoku/core/services/json_store.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';
 import 'package:m6_sudoku/core/errors/failures.dart';
 
 class StatisticsLocalDataSource {
-  StatisticsLocalDataSource(this._storage);
+  StatisticsLocalDataSource(StorageService storage)
+    : _json = JsonStore(storage);
 
-  final StorageService _storage;
+  final JsonStore _json;
 
   static const String _statsKey = 'statistics';
   static const String _gamesKey = 'game_records';
 
   Future<Either<Failure, Statistics>> getStatistics() async {
-    try {
-      final jsonString = _storage.getString(_statsKey);
-      if (jsonString == null) {
-        return Right(_defaultStatistics());
-      }
-      final map = jsonDecode(jsonString) as Map<String, dynamic>;
-      return Right(Statistics.fromJson(map));
-    } catch (e) {
-      return Left(CacheFailure('Failed to get statistics: $e'));
-    }
+    return _json.readJson(
+      _statsKey,
+      (decoded) => Statistics.fromJson(decoded as Map<String, dynamic>),
+      _defaultStatistics,
+      'get statistics',
+    );
   }
 
-  Future<Either<Failure, void>> updateStatistics(Statistics statistics) async {
-    try {
-      await _storage.setString(_statsKey, jsonEncode(statistics.toJson()));
-      return const Right(null);
-    } catch (e) {
-      return Left(StorageFailure('Failed to update statistics: $e'));
-    }
+  Future<Either<Failure, void>> updateStatistics(Statistics statistics) {
+    return _json.writeJson(_statsKey, statistics.toJson(), 'update statistics');
   }
 
   Future<Either<Failure, void>> addGameRecord(GameRecord record) async {
-    try {
-      final gamesResult = await getRecentGames();
-      final games = gamesResult.fold((_) => <GameRecord>[], (g) => g);
-      final updatedGames = [record, ...games].take(100).toList();
-      await _storage.setString(
-        _gamesKey,
-        jsonEncode(updatedGames.map((g) => g.toJson()).toList()),
-      );
-      return const Right(null);
-    } catch (e) {
-      return Left(StorageFailure('Failed to add game record: $e'));
-    }
+    final gamesResult = await getRecentGames();
+    final games = gamesResult.fold((_) => <GameRecord>[], (g) => g);
+    final updatedGames = [record, ...games].take(100).toList();
+    return _json.writeJson(
+      _gamesKey,
+      updatedGames.map((g) => g.toJson()).toList(),
+      'add game record',
+    );
   }
 
   Future<Either<Failure, List<GameRecord>>> getRecentGames({
     int limit = 10,
   }) async {
-    try {
-      final jsonString = _storage.getString(_gamesKey);
-      if (jsonString == null) return const Right([]);
-      final list = jsonDecode(jsonString) as List;
-      final games =
-          list
+    final result = _json.readJson(
+      _gamesKey,
+      (decoded) =>
+          (decoded as List)
               .map((e) => GameRecord.fromJson(e as Map<String, dynamic>))
-              .toList();
-      return Right(games.take(limit).toList());
-    } catch (e) {
-      return Left(CacheFailure('Failed to get recent games: $e'));
-    }
+              .toList(),
+      () => <GameRecord>[],
+      'get recent games',
+    );
+    return result.map((games) => games.take(limit).toList());
   }
 
-  Future<Either<Failure, void>> resetStatistics() async {
-    try {
-      await _storage.remove(_statsKey);
-      await _storage.remove(_gamesKey);
-      return const Right(null);
-    } catch (e) {
-      return Left(StorageFailure('Failed to reset statistics: $e'));
-    }
+  Future<Either<Failure, void>> resetStatistics() {
+    return _json.removeKeys([_statsKey, _gamesKey], 'reset statistics');
   }
 
   Statistics _defaultStatistics() {

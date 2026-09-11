@@ -48,7 +48,11 @@ class DailyStreakScreen extends StatelessWidget {
         children: [
           // Same backdrop as the Home screen, for a consistent identity
           // across the app's "moment" screens.
-          Image.asset('assets/images/m6-splash-screen.jpg', fit: BoxFit.cover),
+          Image.asset(
+            'assets/images/m6-splash-screen.jpg',
+            fit: BoxFit.cover,
+            excludeFromSemantics: true,
+          ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(AppConstants.spacingLg),
