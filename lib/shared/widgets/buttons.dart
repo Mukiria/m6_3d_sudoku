@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
+import 'package:m6_sudoku/core/theme/glass_tokens.dart';
 import 'package:m6_sudoku/shared/widgets/glass/glass_button_surface.dart';
 
 class AppButton extends StatelessWidget {
@@ -55,7 +56,15 @@ class AppButton extends StatelessWidget {
 
     final buttonHeight = height ?? _getButtonHeight(size);
     final buttonPadding = padding ?? _getButtonPadding(size);
-    final buttonBorderRadius = borderRadius ?? 12.0;
+    final buttonBorderRadius = borderRadius ?? 10.0;
+    // SquircleBorder (used by GlassButtonSurface, below) pushes its curve's
+    // tangent points outward by its own `smoothing` fraction, so a plain
+    // BorderRadius.circular(10) elsewhere in the app (a card, a chip) reads
+    // noticeably tighter than a same-numbered SquircleBorder corner would —
+    // dividing back out by (1 + smoothing) is what makes a glass button's
+    // curve actually look like 10, not ~16.
+    final glassCornerRadius =
+        buttonBorderRadius / (1 + GlassTokens.of(context).squircleSmoothing);
     final textStyle = _getTextStyle(theme, size);
 
     Widget buttonChild =
@@ -117,10 +126,15 @@ class AppButton extends StatelessWidget {
           height: buttonHeight,
           child:
               backgroundColor != null
-                  ? filledButton
+                  ? _withButtonShadow(
+                    filledButton,
+                    tint: backgroundColor!,
+                    radius: buttonBorderRadius,
+                    enabled: effectiveOnPressed != null,
+                  )
                   : GlassButtonSurface(
                     enabled: effectiveOnPressed != null,
-                    borderRadius: buttonBorderRadius,
+                    borderRadius: glassCornerRadius,
                     tintColor: glassTint,
                     child: filledButton,
                   ),
@@ -129,28 +143,35 @@ class AppButton extends StatelessWidget {
         return SizedBox(
           width: width,
           height: buttonHeight,
-          child: OutlinedButton(
-            onPressed: effectiveOnPressed,
-            style: OutlinedButton.styleFrom(
-              padding: buttonPadding,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(buttonBorderRadius),
-              ),
-              textStyle: textStyle,
-              minimumSize: Size(width ?? 0, buttonHeight),
-              side: BorderSide(
-                color:
+          child: _withButtonShadow(
+            OutlinedButton(
+              onPressed: effectiveOnPressed,
+              style: OutlinedButton.styleFrom(
+                padding: buttonPadding,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(buttonBorderRadius),
+                ),
+                textStyle: textStyle,
+                minimumSize: Size(width ?? 0, buttonHeight),
+                side: BorderSide(
+                  color:
+                      effectiveOnPressed != null
+                          ? colorScheme.primary
+                          : colorScheme.outline.withValues(alpha: 0.5),
+                  width: 1.5,
+                ),
+                foregroundColor:
                     effectiveOnPressed != null
                         ? colorScheme.primary
-                        : colorScheme.outline.withValues(alpha: 0.5),
-                width: 1.5,
+                        : colorScheme.onSurface.withValues(alpha: 0.38),
               ),
-              foregroundColor:
-                  effectiveOnPressed != null
-                      ? colorScheme.primary
-                      : colorScheme.onSurface.withValues(alpha: 0.38),
+              child: buttonChild,
             ),
-            child: buttonChild,
+            tint: colorScheme.primary,
+            radius: buttonBorderRadius,
+            enabled: effectiveOnPressed != null,
+            ambientAlpha: 0.12,
+            contactAlpha: 0.08,
           ),
         );
       case AppButtonVariant.text:
@@ -213,13 +234,48 @@ class AppButton extends StatelessWidget {
           height: buttonHeight,
           child: GlassButtonSurface(
             enabled: effectiveOnPressed != null,
-            borderRadius: buttonBorderRadius,
-            elevatedShadow: false,
+            borderRadius: glassCornerRadius,
             tintColor: glassTint,
             child: tonalButton,
           ),
         );
     }
+  }
+
+  /// The same soft-ambient-plus-tight-contact shadow pairing [GlassSurface]
+  /// casts, reused here for the button variants that render as plain
+  /// [RoundedRectangleBorder]s rather than going through glass — [tint]
+  /// keeps each one's shadow color matched to what it's actually casting a
+  /// shadow FOR (a solid button's own fill, an outlined button's accent
+  /// border) instead of a flat generic grey underneath everything.
+  Widget _withButtonShadow(
+    Widget child, {
+    required Color tint,
+    required double radius,
+    required bool enabled,
+    double ambientAlpha = 0.22,
+    double contactAlpha = 0.14,
+  }) {
+    if (!enabled) return child;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: [
+          BoxShadow(
+            color: tint.withValues(alpha: ambientAlpha),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+            spreadRadius: -4,
+          ),
+          BoxShadow(
+            color: tint.withValues(alpha: contactAlpha),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: child,
+    );
   }
 
   Widget _buildChildWithIcon(BuildContext context, TextStyle textStyle) {
@@ -345,7 +401,7 @@ class AppIconButton extends StatelessWidget {
     final effectiveOnPressed = isDisabled ? null : onPressed;
     final effectiveColor = color ?? colorScheme.onSurface;
     final effectiveBackgroundColor = backgroundColor ?? Colors.transparent;
-    final effectiveBorderRadius = borderRadius ?? 12.0;
+    final effectiveBorderRadius = borderRadius ?? 10.0;
 
     Widget button = IconButton(
       onPressed: effectiveOnPressed,
@@ -422,7 +478,7 @@ class AppFloatingActionButton extends StatelessWidget {
         highlightElevation: highlightElevation,
         shape:
             shape ??
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         extendedPadding:
             extendedPadding ??
             const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -444,7 +500,7 @@ class AppFloatingActionButton extends StatelessWidget {
       highlightElevation: highlightElevation,
       shape:
           shape ??
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: child,
     );
   }

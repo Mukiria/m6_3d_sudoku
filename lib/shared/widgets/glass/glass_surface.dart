@@ -104,15 +104,32 @@ class GlassSurface extends StatelessWidget {
               IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      stops: const [0.0, 0.6],
-                      colors: [
-                        tokens.specularHighlight,
-                        tokens.specularHighlight.withValues(alpha: 0),
-                      ],
-                    ),
+                    gradient:
+                        tintColor != null
+                            // An accent-tinted surface (an orange CTA, say)
+                            // lightens its own tint toward the top instead
+                            // of washing out toward white — a top-to-bottom
+                            // "light orange to orange" sheen that stays
+                            // on-brand, rather than a highlight that reads
+                            // as a totally different (white) surface
+                            // peeking through.
+                            ? LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Color.lerp(tintColor, Colors.white, 0.35)!,
+                                tintColor!.withValues(alpha: 0),
+                              ],
+                            )
+                            : LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              stops: const [0.0, 0.6],
+                              colors: [
+                                tokens.specularHighlight,
+                                tokens.specularHighlight.withValues(alpha: 0),
+                              ],
+                            ),
                   ),
                 ),
               ),
@@ -133,17 +150,7 @@ class GlassSurface extends StatelessWidget {
     content = DecoratedBox(
       decoration: ShapeDecoration(
         shape: shape,
-        shadows:
-            elevatedShadow
-                ? [
-                  BoxShadow(
-                    color: tokens.shadowColor,
-                    blurRadius: 24,
-                    offset: const Offset(0, 10),
-                    spreadRadius: -4,
-                  ),
-                ]
-                : null,
+        shadows: elevatedShadow ? _shadowsFor(tintColor, tokens) : null,
       ),
       child: content,
     );
@@ -153,5 +160,28 @@ class GlassSurface extends StatelessWidget {
     }
 
     return content;
+  }
+
+  /// A soft, wide ambient layer plus a tighter, closer contact layer —
+  /// together they read as a single natural shadow rather than a flat
+  /// silhouette, the way one big blurred BoxShadow alone tends to.
+  /// Colored from [tint] when this surface has one (an accent CTA casting
+  /// an orange-tinted shadow rather than a generic grey one underneath it)
+  /// so the shadow itself feels like it belongs to that surface, not a
+  /// one-size-fits-all default.
+  List<BoxShadow> _shadowsFor(Color? tint, GlassTokens tokens) {
+    final ambient = tint?.withValues(alpha: 0.22) ?? tokens.shadowColor;
+    final contact =
+        tint?.withValues(alpha: 0.14) ??
+        tokens.shadowColor.withValues(alpha: tokens.shadowColor.a * 0.6);
+    return [
+      BoxShadow(
+        color: ambient,
+        blurRadius: 24,
+        offset: const Offset(0, 10),
+        spreadRadius: -4,
+      ),
+      BoxShadow(color: contact, blurRadius: 6, offset: const Offset(0, 2)),
+    ];
   }
 }

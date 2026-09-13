@@ -19,7 +19,10 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Settings'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: theme.brightness == Brightness.dark ? Colors.white : null,
+          ),
           tooltip: 'Back',
           onPressed: () => context.pop(),
         ),

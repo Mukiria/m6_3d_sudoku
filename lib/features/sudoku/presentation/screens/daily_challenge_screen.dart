@@ -137,7 +137,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
                 isCompleted
                     ? extension.difficultyEasyColor.withValues(alpha: 0.1)
                     : extension.difficultyMediumColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color:
                   isCompleted
@@ -596,7 +596,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: extension.difficultyMediumColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, size: 20, color: extension.difficultyMediumColor),
           ),

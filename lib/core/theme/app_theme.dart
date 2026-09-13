@@ -297,7 +297,7 @@ class AppTheme {
           return null;
         }),
         side: BorderSide(color: colorScheme.outline, width: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         visualDensity: VisualDensity.compact,
       ),
@@ -669,16 +669,16 @@ class AppTheme {
       onError: Color(0xFFB71C1C),
       errorContainer: Color(0xFFC62828),
       onErrorContainer: Color(0xFFFFCDD2),
-      surface: Color(0xFF121212),
+      surface: Color(0xFF000000),
       onSurface: Color(0xFFE0E0E0),
-      surfaceContainerHighest: Color(0xFF2C2C2C),
+      surfaceContainerHighest: Color(0xFF1A1A1A),
       onSurfaceVariant: Color(0xFFB0B0B0),
-      outline: Color(0xFF444444),
-      outlineVariant: Color(0xFF444444),
+      outline: Color(0xFF333333),
+      outlineVariant: Color(0xFF333333),
       shadow: Color(0x33000000),
       scrim: Color(0x33000000),
       inverseSurface: Color(0xFFE0E0E0),
-      onInverseSurface: Color(0xFF121212),
+      onInverseSurface: Color(0xFF000000),
       inversePrimary: Color(0xFF1976D2),
     );
 
@@ -697,6 +697,21 @@ class AppTheme {
       canvasColor: colorScheme.surface,
       cardColor: colorScheme.surface,
       dividerColor: colorScheme.outlineVariant,
+      // lightTheme.appBarTheme's iconTheme/actionsIconTheme were baked with
+      // the LIGHT colorScheme's onSurface — copyWith doesn't recompute
+      // nested theme objects, so every AppBar's back button (most of them
+      // rely on Flutter's auto-generated one, with no per-screen color to
+      // override) would otherwise stay that light-mode color here too.
+      appBarTheme: lightTheme.appBarTheme.copyWith(
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: colorScheme.onSurface,
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+        actionsIconTheme: const IconThemeData(color: Colors.white),
+      ),
       focusColor: colorScheme.primary.withValues(alpha: 0.12),
       hoverColor: colorScheme.primary.withValues(alpha: 0.08),
       highlightColor: colorScheme.primary.withValues(alpha: 0.12),

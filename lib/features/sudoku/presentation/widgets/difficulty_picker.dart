@@ -100,7 +100,7 @@ class DifficultyPicker extends StatelessWidget {
                           isSelected
                               ? difficultyColor
                               : difficultyColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       difficulty.displayName,

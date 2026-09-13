@@ -31,7 +31,11 @@ class StatisticsScreen extends ConsumerWidget {
           () => Scaffold(
             appBar: AppBar(
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_rounded),
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color:
+                      theme.brightness == Brightness.dark ? Colors.white : null,
+                ),
                 tooltip: 'Home',
                 onPressed: onBack,
               ),
@@ -44,7 +48,11 @@ class StatisticsScreen extends ConsumerWidget {
           (error, stack) => Scaffold(
             appBar: AppBar(
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_rounded),
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color:
+                      theme.brightness == Brightness.dark ? Colors.white : null,
+                ),
                 tooltip: 'Home',
                 onPressed: onBack,
               ),
@@ -287,28 +295,35 @@ class StatisticsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: Colors.white, size: 24),
           ),
           const SizedBox(width: AppConstants.spacingMd),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              Text(
-                value,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: color,
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -340,7 +355,7 @@ class StatisticsScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               difficulty.displayName,
@@ -432,7 +447,7 @@ class StatisticsScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               game.difficulty.capitalize(),
@@ -458,10 +473,14 @@ class StatisticsScreen extends ConsumerWidget {
                         color: theme.colorScheme.error,
                       ),
                     const SizedBox(width: 4),
-                    Text(
-                      game.completed ? 'Completed' : 'Incomplete',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w500,
+                    Flexible(
+                      child: Text(
+                        game.completed ? 'Completed' : 'Incomplete',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                     const Spacer(),
@@ -618,7 +637,11 @@ class _GlassAppBarDelegate extends SliverPersistentHeaderDelegate {
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back_rounded),
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color:
+                      theme.brightness == Brightness.dark ? Colors.white : null,
+                ),
                 tooltip: 'Home',
                 onPressed: onBack,
               ),

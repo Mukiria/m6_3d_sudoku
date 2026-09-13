@@ -12,7 +12,7 @@ class AppCard extends StatelessWidget {
     this.elevation = 1,
     this.color,
     this.borderColor,
-    this.borderRadius = 16,
+    this.borderRadius = 10,
     this.onTap,
     this.inkColor,
   });

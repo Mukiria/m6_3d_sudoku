@@ -303,15 +303,40 @@ class _SudokuCell extends StatelessWidget {
   /// [highlightStrength] goes from 0.0 to 1.0. Conflicts are left out of the
   /// fade entirely — they should stay fully visible until resolved.
   Color _backgroundColor(double highlightStrength) {
-    if (isConflicted) return extension.cellErrorBackground;
-    if (!isSelected && !isHighlighted) return _restingColor();
+    Color base;
+    if (isConflicted) {
+      base = extension.cellErrorBackground;
+    } else if (!isSelected && !isHighlighted) {
+      base = _restingColor();
+    } else {
+      final activeColor =
+          isSelected
+              ? extension.cellSelectedBackground
+              : extension.cellRelatedBackground;
+      base =
+          Color.lerp(_restingColor(), activeColor, highlightStrength) ??
+          _restingColor();
+    }
 
-    final activeColor =
-        isSelected
-            ? extension.cellSelectedBackground
-            : extension.cellRelatedBackground;
-    return Color.lerp(_restingColor(), activeColor, highlightStrength) ??
-        _restingColor();
+    // A faint checkerboard over the 3x3 boxes so they stay easy to tell
+    // apart at a glance — dark mode's boxes are otherwise indistinguishable
+    // since the thick subgrid lines already read as fairly subtle against a
+    // dark background. Left out of light mode, where the existing outline
+    // is already clear enough on its own.
+    if (colorScheme.brightness == Brightness.dark && _isEvenSubgrid) {
+      base = Color.alphaBlend(Colors.white.withValues(alpha: 0.1), base);
+    }
+    return base;
+  }
+
+  /// The 3x3 boxes form their own 3x3 arrangement (indices 0-8, left-to-right
+  /// then top-to-bottom) — "even" here means that arrangement's own
+  /// checkerboard, the same corners-and-center pattern common in printed
+  /// Sudoku puzzles, not anything about individual row/column parity.
+  bool get _isEvenSubgrid {
+    final boxRow = row ~/ AppConstants.subGridSize;
+    final boxCol = col ~/ AppConstants.subGridSize;
+    return (boxRow * AppConstants.subGridSize + boxCol).isEven;
   }
 
   /// Thin lines between cells, thick lines every three cells to mark the

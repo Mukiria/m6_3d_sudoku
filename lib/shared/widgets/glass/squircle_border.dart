@@ -18,7 +18,7 @@ import 'package:flutter/material.dart';
 class SquircleBorder extends OutlinedBorder {
   const SquircleBorder({
     super.side = BorderSide.none,
-    this.cornerRadius = 24,
+    this.cornerRadius = 10,
     this.smoothing = 0.6,
     this.topLeftRadius,
     this.topRightRadius,

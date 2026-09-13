@@ -20,14 +20,17 @@ class GameTopBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final color = Theme.of(context).colorScheme.onSurfaceVariant;
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.onSurfaceVariant;
+    final backColor =
+        theme.brightness == Brightness.dark ? Colors.white : color;
 
     return Row(
       children: [
         _DockIconButton(
           icon: Icons.arrow_back_rounded,
           tooltip: 'Back',
-          color: color,
+          color: backColor,
           onTap: onBack,
         ),
         const Spacer(),

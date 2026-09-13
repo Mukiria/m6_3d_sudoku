@@ -52,7 +52,10 @@ class GameHeader extends StatelessWidget {
         ),
         IconButton(
           onPressed: onPause,
-          icon: const Icon(Icons.pause_rounded),
+          icon: Icon(
+            Icons.pause_rounded,
+            color: theme.brightness == Brightness.dark ? Colors.white : null,
+          ),
           tooltip: 'Pause',
           visualDensity: VisualDensity.compact,
         ),

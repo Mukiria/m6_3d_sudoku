@@ -28,6 +28,14 @@ class PauseMenu extends ConsumerWidget {
       width: double.infinity,
       child: GlassSurface(
         variant: GlassVariant.strong,
+        // Dark mode's usual translucent-white glass tint reads as barely
+        // there over an already-near-black scaffold — a near-opaque black
+        // instead gives the pause sheet a real, deliberate surface of its
+        // own to sit on, rather than blending into the page behind it.
+        tintColor:
+            theme.brightness == Brightness.dark
+                ? Colors.black.withValues(alpha: 0.95)
+                : null,
         topLeftRadius: AppConstants.largeBorderRadius,
         topRightRadius: AppConstants.largeBorderRadius,
         bottomLeftRadius: 0,
@@ -42,7 +50,7 @@ class PauseMenu extends ConsumerWidget {
               margin: const EdgeInsets.only(bottom: AppConstants.spacingLg),
               decoration: BoxDecoration(
                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
             Text(
@@ -77,8 +85,10 @@ class PauseMenu extends ConsumerWidget {
               onPressed: () {
                 context.go(AppRoutes.home);
               },
-              variant: AppButtonVariant.outlined,
+              variant: AppButtonVariant.filled,
               size: AppButtonSize.large,
+              glassTint: extension.difficultyEasyColor.withValues(alpha: 0.85),
+              foregroundColor: Colors.white,
               icon: const Icon(Icons.home_rounded),
               child: const Text('Main Menu'),
             ),
@@ -97,10 +107,10 @@ class PauseMenu extends ConsumerWidget {
                 }
                 context.pop();
               },
-              // Outlined, not a second filled/tinted CTA — Resume is the one
-              // action this sheet should weight as primary.
-              variant: AppButtonVariant.outlined,
+              variant: AppButtonVariant.filled,
               size: AppButtonSize.large,
+              glassTint: extension.difficultyEasyColor.withValues(alpha: 0.85),
+              foregroundColor: Colors.white,
               icon: const Icon(Icons.refresh_rounded),
               child: const Text('Restart'),
             ),

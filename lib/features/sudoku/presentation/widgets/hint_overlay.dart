@@ -129,7 +129,7 @@ class HintOverlay extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: hintColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           'Row ${hintState.cell.row + 1}, Column ${hintState.cell.col + 1}',

@@ -149,7 +149,7 @@ class AchievementScreen extends ConsumerWidget {
                       valueColor: AlwaysStoppedAnimation<Color>(
                         extension.difficultyExpertColor,
                       ),
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(10),
                       minHeight: 8,
                     ),
                   ],
@@ -196,7 +196,7 @@ class AchievementScreen extends ConsumerWidget {
                       extension,
                       group.category,
                     ).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     group.category.displayName,
@@ -366,7 +366,7 @@ class AchievementScreen extends ConsumerWidget {
                     height: 4,
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: FractionallySizedBox(
                       alignment: Alignment.centerLeft,
@@ -380,7 +380,7 @@ class AchievementScreen extends ConsumerWidget {
                                     achievement.category,
                                   )
                                   : colorScheme.primary,
-                          borderRadius: BorderRadius.circular(2),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                     ),

@@ -76,9 +76,9 @@ class AppConstants {
   static const double gridSizePx = 360.0;
 
   // Border Radius
-  static const double borderRadius = 12.0;
-  static const double smallBorderRadius = 8.0;
-  static const double largeBorderRadius = 20.0;
+  static const double borderRadius = 10.0;
+  static const double smallBorderRadius = 10.0;
+  static const double largeBorderRadius = 10.0;
 
   // Button Dimensions
   static const double buttonHeight = 48.0;

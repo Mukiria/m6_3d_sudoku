@@ -51,7 +51,21 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _startSession();
+      try {
+        await _startSession();
+      } catch (e) {
+        if (mounted) _handleSessionLoadFailure(e);
+        return;
+      }
+      // _startSession's daily-challenge branch awaits a provider future and
+      // a puzzle load — either can outlast this screen (the user backs out,
+      // a hot restart lands mid-request, or on web the browser's own back
+      // button pops the route without this widget's PopScope seeing it
+      // first). Reading a provider through `ref` on a since-disposed
+      // ConsumerState throws StateError (flutter_riverpod's
+      // `_assertNotDisposed`, not merely a debug assert), so this check
+      // has to happen before touching `ref` again, not after.
+      if (!mounted) return;
       ref.read(timerControllerProvider).start();
     });
   }
@@ -89,6 +103,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     if (mode.startsWith('daily_')) {
       final challenge = await ref.read(dailyChallengeProvider.future);
+      // Same disposal race as the caller's post-_startSession read, one
+      // await earlier: don't touch `ref` again after a suspension point
+      // without checking the widget is still around to own it.
+      if (!mounted) return;
       await ref
           .read(gameControllerProvider.notifier)
           .loadPuzzle(challenge.puzzle, difficulty: Difficulty.medium);
@@ -99,6 +117,20 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       );
       await ref.read(gameControllerProvider.notifier).newGame(difficulty);
     }
+  }
+
+  /// [_startSession]'s two failure-prone calls — [dailyChallengeProvider]
+  /// and `newGame` — are both documented to throw on a real, reachable
+  /// failure (a corrupt/missing daily challenge; `newGame`'s own generator
+  /// throws if it can't produce a valid puzzle), and neither caller used to
+  /// catch that. Left uncaught, it surfaced as an unhandled exception with
+  /// the player stuck on the loading spinner forever — this at least gets
+  /// them back to a screen they can act from, with a visible reason why.
+  void _handleSessionLoadFailure(Object error) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Failed to load puzzle: $error')));
+    context.go(AppRoutes.home);
   }
 
   /// Pauses the game (status + timer) and shows the pause sheet over a
@@ -180,8 +212,17 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 onPressed: () async {
                   context.pop();
                   // Game-over state is never GameStatus.playing, so
-                  // _startSession always reloads a fresh session here.
-                  await _startSession();
+                  // _startSession always reloads a fresh session here —
+                  // regenerating a puzzle is genuinely slow on the harder
+                  // difficulties, so there's a real window for the player
+                  // to navigate away before this resolves.
+                  try {
+                    await _startSession();
+                  } catch (e) {
+                    if (mounted) _handleSessionLoadFailure(e);
+                    return;
+                  }
+                  if (!mounted) return;
                   ref.read(timerControllerProvider).reset();
                   ref.read(timerControllerProvider).start();
                   _hasNavigated = false;

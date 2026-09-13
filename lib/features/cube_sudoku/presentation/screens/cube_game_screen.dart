@@ -718,6 +718,10 @@ class _CubeGameScreenState extends ConsumerState<CubeGameScreen>
                         _DockIconButton(
                           icon: Icons.arrow_back_rounded,
                           tooltip: 'Pause',
+                          color:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : null,
                           onTap: _showPauseSheet,
                         ),
                         if (!forceFlat) ...[
@@ -1111,11 +1115,15 @@ class _DockIconButton extends StatelessWidget {
     required this.icon,
     required this.tooltip,
     required this.onTap,
+    this.color,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback onTap;
+
+  /// Overrides the default `onSurfaceVariant` icon color.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -1123,7 +1131,7 @@ class _DockIconButton extends StatelessWidget {
     return IconButton(
       onPressed: onTap,
       tooltip: tooltip,
-      icon: Icon(icon, size: 22, color: colorScheme.onSurfaceVariant),
+      icon: Icon(icon, size: 22, color: color ?? colorScheme.onSurfaceVariant),
       visualDensity: VisualDensity.compact,
     );
   }

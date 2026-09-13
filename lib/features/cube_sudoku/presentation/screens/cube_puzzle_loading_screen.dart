@@ -78,7 +78,7 @@ class _CubePuzzleLoadingScreenState
                       height: 120,
                       decoration: BoxDecoration(
                         color: AppThemeExtension.brandOrange,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
                             color: AppThemeExtension.brandOrange.withValues(

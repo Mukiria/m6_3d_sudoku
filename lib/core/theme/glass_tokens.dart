@@ -49,7 +49,7 @@ class GlassTokens extends ThemeExtension<GlassTokens> {
 
   static const GlassTokens light = GlassTokens(
     blurSigma: 22,
-    cornerRadius: 24,
+    cornerRadius: 10,
     squircleSmoothing: 0.6,
     tint: Color(0x8CFFFFFF),
     tintStrong: Color(0xC7FFFFFF),
@@ -60,7 +60,7 @@ class GlassTokens extends ThemeExtension<GlassTokens> {
 
   static const GlassTokens dark = GlassTokens(
     blurSigma: 22,
-    cornerRadius: 24,
+    cornerRadius: 10,
     squircleSmoothing: 0.6,
     tint: Color(0x0EFFFFFF),
     tintStrong: Color(0x1AFFFFFF),
