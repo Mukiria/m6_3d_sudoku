@@ -20,234 +20,207 @@ class HomeScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            'assets/images/m6-splash-screen.jpg',
-            fit: BoxFit.cover,
-            excludeFromSemantics: true,
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(AppConstants.spacingLg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+      backgroundColor: _HomeColors.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppConstants.spacingLg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: AppConstants.spacingXl),
+
+              // Title
+              Center(
+                child: Semantics(
+                  label: AppConstants.appName,
+                  child: Image.asset(
+                    'assets/images/m6-sudoku-logotype.png',
+                    height: 64,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.2, end: 0),
+
+              const SizedBox(height: AppConstants.spacingXl),
+
+              // Continue Game or New Game
+              Consumer(
+                builder: (context, ref, child) {
+                  final gameState = ref.watch(gameControllerProvider);
+                  final hasSavedGame =
+                      gameState != null &&
+                      gameState.status != GameStatus.completed &&
+                      gameState.status != GameStatus.failed;
+
+                  return Column(
+                    children: [
+                      if (hasSavedGame) ...[
+                        AppButton(
+                              onPressed:
+                                  () => _continueGame(context, ref, gameState),
+                              variant: AppButtonVariant.filled,
+                              size: AppButtonSize.large,
+                              glassTint: AppThemeExtension.brandOrange
+                                  .withValues(alpha: 0.85),
+                              foregroundColor: Colors.white,
+                              child: const Text('Continue Game'),
+                            )
+                            .animate()
+                            .fadeIn(duration: 300.ms, delay: 200.ms)
+                            .slideX(begin: -0.2, end: 0),
+                        const SizedBox(height: AppConstants.spacingMd),
+                      ],
+                      AppButton(
+                            onPressed:
+                                () =>
+                                    context.push(AppRoutes.difficultySelection),
+                            variant: AppButtonVariant.filled,
+                            size: AppButtonSize.large,
+                            glassTint: AppThemeExtension.brandOrange.withValues(
+                              alpha: 0.85,
+                            ),
+                            foregroundColor: Colors.white,
+                            icon: const Icon(Icons.add_rounded),
+                            child: const Text('New Game'),
+                          )
+                          .animate()
+                          .fadeIn(duration: 300.ms, delay: 300.ms)
+                          .slideX(begin: 0.2, end: 0),
+                    ],
+                  );
+                },
+              ),
+
+              const SizedBox(height: AppConstants.spacingMd),
+
+              // 3D Sudoku — a separate mode with its own save slot (see
+              // CubeGameLocalDataSource), so it gets its own
+              // Continue/Play pair rather than sharing the one above.
+              Consumer(
+                builder: (context, ref, child) {
+                  final cubeState = ref.watch(cubeGameControllerProvider);
+                  final hasSavedCube =
+                      cubeState != null && !cubeState.isComplete;
+
+                  return Column(
+                    children: [
+                      if (hasSavedCube) ...[
+                        AppButton(
+                              onPressed:
+                                  () => _continueCube(context, ref, cubeState),
+                              variant: AppButtonVariant.filled,
+                              size: AppButtonSize.large,
+                              glassTint: AppThemeExtension.brandOrange
+                                  .withValues(alpha: 0.85),
+                              foregroundColor: Colors.white,
+                              icon: const Icon(Icons.view_in_ar_rounded),
+                              child: const Text('Continue 3D Sudoku'),
+                            )
+                            .animate()
+                            .fadeIn(duration: 300.ms, delay: 350.ms)
+                            .slideX(begin: -0.2, end: 0),
+                        const SizedBox(height: AppConstants.spacingMd),
+                      ],
+                      AppButton(
+                            onPressed:
+                                () => context.push(AppRoutes.cubeDifficulty),
+                            variant: AppButtonVariant.filled,
+                            size: AppButtonSize.large,
+                            glassTint: AppThemeExtension.brandOrange.withValues(
+                              alpha: 0.85,
+                            ),
+                            foregroundColor: Colors.white,
+                            icon: const Icon(Icons.view_in_ar_rounded),
+                            child: const Text('Play 3D Sudoku'),
+                          )
+                          .animate()
+                          .fadeIn(duration: 300.ms, delay: 400.ms)
+                          .slideX(begin: 0.2, end: 0),
+                    ],
+                  );
+                },
+              ),
+
+              const SizedBox(height: AppConstants.spacingXl),
+
+              Row(
                 children: [
-                  const SizedBox(height: AppConstants.spacingXl),
-
-                  // Title
-                  //
-                  // The wordmark half of this asset is solid white, so it
-                  // needs some contrast of its own against the backdrop
-                  // image behind it — a small soft backdrop hugging just
-                  // the logo, rather than a screen-wide scrim.
-                  Center(
-                        child: Semantics(
-                          label: AppConstants.appName,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppConstants.spacingLg,
-                              vertical: AppConstants.spacingSm,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.28),
-                              borderRadius: BorderRadius.circular(
-                                AppConstants.largeBorderRadius,
-                              ),
-                            ),
-                            child: Image.asset(
-                              'assets/images/m6-sudokulogotype.png',
-                              height: 56,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(duration: 400.ms)
-                      .slideY(begin: -0.2, end: 0),
-
-                  const SizedBox(height: AppConstants.spacingXl),
-
-                  // Continue Game or New Game
-                  Consumer(
-                    builder: (context, ref, child) {
-                      final gameState = ref.watch(gameControllerProvider);
-                      final hasSavedGame =
-                          gameState != null &&
-                          gameState.status != GameStatus.completed &&
-                          gameState.status != GameStatus.failed;
-
-                      return Column(
-                        children: [
-                          if (hasSavedGame) ...[
-                            AppButton(
-                                  onPressed:
-                                      () => _continueGame(
-                                        context,
-                                        ref,
-                                        gameState,
-                                      ),
-                                  variant: AppButtonVariant.filled,
-                                  size: AppButtonSize.large,
-                                  glassTint: AppThemeExtension.brandOrange
-                                      .withValues(alpha: 0.85),
-                                  foregroundColor: Colors.white,
-                                  child: const Text('Continue Game'),
-                                )
-                                .animate()
-                                .fadeIn(duration: 300.ms, delay: 200.ms)
-                                .slideX(begin: -0.2, end: 0),
-                            const SizedBox(height: AppConstants.spacingMd),
-                          ],
-                          AppButton(
-                                onPressed:
-                                    () => context.push(
-                                      AppRoutes.difficultySelection,
-                                    ),
-                                variant: AppButtonVariant.filled,
-                                size: AppButtonSize.large,
-                                glassTint: AppThemeExtension.brandOrange
-                                    .withValues(alpha: 0.85),
-                                foregroundColor: Colors.white,
-                                icon: const Icon(Icons.add_rounded),
-                                child: const Text('New Game'),
-                              )
-                              .animate()
-                              .fadeIn(duration: 300.ms, delay: 300.ms)
-                              .slideX(begin: 0.2, end: 0),
-                        ],
-                      );
-                    },
+                  Expanded(
+                    child: _QuickActionButton(
+                          icon: Icons.calendar_today_rounded,
+                          label: 'Daily',
+                          onPressed:
+                              () => context.push(AppRoutes.dailyChallenge),
+                        )
+                        .animate()
+                        .fadeIn(duration: 300.ms, delay: 450.ms)
+                        .slideY(begin: 0.2, end: 0),
                   ),
-
-                  const SizedBox(height: AppConstants.spacingMd),
-
-                  // 3D Sudoku — a separate mode with its own save slot (see
-                  // CubeGameLocalDataSource), so it gets its own
-                  // Continue/Play pair rather than sharing the one above.
-                  Consumer(
-                    builder: (context, ref, child) {
-                      final cubeState = ref.watch(cubeGameControllerProvider);
-                      final hasSavedCube =
-                          cubeState != null && !cubeState.isComplete;
-
-                      return Column(
-                        children: [
-                          if (hasSavedCube) ...[
-                            AppButton(
-                                  onPressed:
-                                      () => _continueCube(
-                                        context,
-                                        ref,
-                                        cubeState,
-                                      ),
-                                  variant: AppButtonVariant.filled,
-                                  size: AppButtonSize.large,
-                                  glassTint: AppThemeExtension.brandOrange
-                                      .withValues(alpha: 0.85),
-                                  foregroundColor: Colors.white,
-                                  icon: const Icon(Icons.view_in_ar_rounded),
-                                  child: const Text('Continue 3D Sudoku'),
-                                )
-                                .animate()
-                                .fadeIn(duration: 300.ms, delay: 350.ms)
-                                .slideX(begin: -0.2, end: 0),
-                            const SizedBox(height: AppConstants.spacingMd),
-                          ],
-                          AppButton(
-                                onPressed:
-                                    () =>
-                                        context.push(AppRoutes.cubeDifficulty),
-                                variant: AppButtonVariant.filled,
-                                size: AppButtonSize.large,
-                                glassTint: AppThemeExtension.brandOrange
-                                    .withValues(alpha: 0.85),
-                                foregroundColor: Colors.white,
-                                icon: const Icon(Icons.view_in_ar_rounded),
-                                child: const Text('Play 3D Sudoku'),
-                              )
-                              .animate()
-                              .fadeIn(duration: 300.ms, delay: 400.ms)
-                              .slideX(begin: 0.2, end: 0),
-                        ],
-                      );
-                    },
+                  const SizedBox(width: AppConstants.spacingMd),
+                  Expanded(
+                    child: _QuickActionButton(
+                          icon: Icons.bar_chart_rounded,
+                          label: 'Statistics',
+                          onPressed: () => context.push(AppRoutes.statistics),
+                        )
+                        .animate()
+                        .fadeIn(duration: 300.ms, delay: 500.ms)
+                        .slideY(begin: 0.2, end: 0),
                   ),
-
-                  const SizedBox(height: AppConstants.spacingXl),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _QuickActionButton(
-                              icon: Icons.calendar_today_rounded,
-                              label: 'Daily',
-                              onPressed:
-                                  () => context.push(AppRoutes.dailyChallenge),
-                            )
-                            .animate()
-                            .fadeIn(duration: 300.ms, delay: 450.ms)
-                            .slideY(begin: 0.2, end: 0),
-                      ),
-                      const SizedBox(width: AppConstants.spacingMd),
-                      Expanded(
-                        child: _QuickActionButton(
-                              icon: Icons.bar_chart_rounded,
-                              label: 'Statistics',
-                              onPressed:
-                                  () => context.push(AppRoutes.statistics),
-                            )
-                            .animate()
-                            .fadeIn(duration: 300.ms, delay: 500.ms)
-                            .slideY(begin: 0.2, end: 0),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppConstants.spacingMd),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _QuickActionButton(
-                              icon: Icons.emoji_events_rounded,
-                              label: 'Awards',
-                              onPressed:
-                                  () => context.push(AppRoutes.achievements),
-                            )
-                            .animate()
-                            .fadeIn(duration: 300.ms, delay: 550.ms)
-                            .slideY(begin: 0.2, end: 0),
-                      ),
-                      const SizedBox(width: AppConstants.spacingMd),
-                      Expanded(
-                        child: _QuickActionButton(
-                              icon: Icons.settings_rounded,
-                              label: 'Settings',
-                              onPressed: () => context.push(AppRoutes.settings),
-                            )
-                            .animate()
-                            .fadeIn(duration: 300.ms, delay: 600.ms)
-                            .slideY(begin: 0.2, end: 0),
-                      ),
-                    ],
-                  ),
-
-                  const Spacer(),
-
-                  // Version
-                  Text(
-                    'Version ${AppConstants.appVersion}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: _HomeColors.text.withValues(alpha: 0.6),
-                    ),
-                    textAlign: TextAlign.center,
-                  ).animate().fadeIn(duration: 300.ms, delay: 700.ms),
                 ],
               ),
-            ),
+              const SizedBox(height: AppConstants.spacingMd),
+              Row(
+                children: [
+                  Expanded(
+                    child: _QuickActionButton(
+                          icon: Icons.emoji_events_rounded,
+                          label: 'Awards',
+                          onPressed: () => context.push(AppRoutes.achievements),
+                        )
+                        .animate()
+                        .fadeIn(duration: 300.ms, delay: 550.ms)
+                        .slideY(begin: 0.2, end: 0),
+                  ),
+                  const SizedBox(width: AppConstants.spacingMd),
+                  Expanded(
+                    child: _QuickActionButton(
+                          icon: Icons.settings_rounded,
+                          label: 'Settings',
+                          onPressed: () => context.push(AppRoutes.settings),
+                        )
+                        .animate()
+                        .fadeIn(duration: 300.ms, delay: 600.ms)
+                        .slideY(begin: 0.2, end: 0),
+                  ),
+                ],
+              ),
+
+              const Spacer(),
+
+              // Mascot
+              Center(
+                child: Image.asset(
+                  'assets/images/m6-sudoku-mascot.png',
+                  height: 160,
+                  fit: BoxFit.contain,
+                  excludeFromSemantics: true,
+                ),
+              ).animate().fadeIn(duration: 400.ms, delay: 650.ms),
+
+              const SizedBox(height: AppConstants.spacingSm),
+
+              // Version
+              Text(
+                'Version ${AppConstants.appVersion}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: _HomeColors.text.withValues(alpha: 0.6),
+                ),
+                textAlign: TextAlign.center,
+              ).animate().fadeIn(duration: 300.ms, delay: 700.ms),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -269,20 +242,19 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// Text/icon color shared by the content laid directly over the home
-/// backdrop image (no scrim behind it), chosen for contrast against that
-/// image's light, airy palette.
+/// Background and text/icon color for the home screen's flat backdrop.
 class _HomeColors {
   _HomeColors._();
 
+  static const Color background = Color(0xFFFFFBF2);
   static const Color text = Color(0xFF2C2A28);
 }
 
 /// A quick-action tile: a thin wrapper over [AppCard] (sized to fit its
 /// icon+label content rather than a fixed button height) so these four
 /// buttons render as the same neutral glass surface as every other card in
-/// the app — the splash image behind them shows through, blurred and
-/// tinted, rather than being covered by an opaque card.
+/// the app — the flat backdrop color shows through, tinted, rather than
+/// being covered by an opaque card.
 class _QuickActionButton extends StatelessWidget {
   const _QuickActionButton({
     required this.icon,

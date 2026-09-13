@@ -16,8 +16,11 @@ const List<String> _weekdayLabels = [
   'Sat',
 ];
 
-/// Text color for content laid directly over the backdrop image (no scrim
-/// behind it), chosen for contrast against its light, airy palette.
+/// Flat backdrop color for this screen — matches Home's.
+const Color _backgroundColor = Color(0xFFFFFBF2);
+
+/// Text color for content laid directly over [_backgroundColor], no scrim
+/// behind it.
 const Color _textColor = Color(0xFF2C2A28);
 
 /// Shown once, right after the first puzzle of the day is completed —
@@ -43,85 +46,73 @@ class DailyStreakScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Same backdrop as the Home screen, for a consistent identity
-          // across the app's "moment" screens.
-          Image.asset(
-            'assets/images/m6-splash-screen.jpg',
-            fit: BoxFit.cover,
-            excludeFromSemantics: true,
+      // Same flat backdrop color as the Home screen, for a consistent
+      // identity across the app's "moment" screens.
+      backgroundColor: _backgroundColor,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppConstants.spacingLg),
+          child: Column(
+            children: [
+              const SizedBox(height: AppConstants.spacingXl),
+
+              Text(
+                'Daily Streak',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: _textColor,
+                ),
+              ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.2, end: 0),
+
+              const SizedBox(height: AppConstants.spacingXl),
+
+              _SunBadge(
+                streak: currentStreak,
+              ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+
+              const SizedBox(height: AppConstants.spacingXl),
+
+              _WeekStrip(
+                    completedWeekdays: completedWeekdays,
+                    todayWeekday: todayWeekday,
+                  )
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 300.ms)
+                  .slideY(begin: 0.2, end: 0),
+
+              const SizedBox(height: AppConstants.spacingXl),
+
+              Text(
+                    'You\'re one grid closer to Sudoku mastery!',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: _textColor.withValues(alpha: 0.75),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 400.ms)
+                  .slideY(begin: 0.2, end: 0),
+
+              const Spacer(),
+
+              AppButton(
+                    onPressed: () => context.go(AppRoutes.home),
+                    variant: AppButtonVariant.filled,
+                    size: AppButtonSize.large,
+                    backgroundColor: AppThemeExtension.brandOrange,
+                    foregroundColor: Colors.white,
+                    width: double.infinity,
+                    child: const Text('Continue'),
+                  )
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 500.ms)
+                  .slideY(begin: 0.3, end: 0),
+
+              const SizedBox(height: AppConstants.spacingLg),
+            ],
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(AppConstants.spacingLg),
-              child: Column(
-                children: [
-                  const SizedBox(height: AppConstants.spacingXl),
-
-                  Text(
-                        'Daily Streak',
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: _textColor,
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(duration: 400.ms)
-                      .slideY(begin: -0.2, end: 0),
-
-                  const SizedBox(height: AppConstants.spacingXl),
-
-                  _SunBadge(
-                    streak: currentStreak,
-                  ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
-
-                  const SizedBox(height: AppConstants.spacingXl),
-
-                  _WeekStrip(
-                        completedWeekdays: completedWeekdays,
-                        todayWeekday: todayWeekday,
-                      )
-                      .animate()
-                      .fadeIn(duration: 400.ms, delay: 300.ms)
-                      .slideY(begin: 0.2, end: 0),
-
-                  const SizedBox(height: AppConstants.spacingXl),
-
-                  Text(
-                        'You\'re one grid closer to Sudoku mastery!',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: _textColor.withValues(alpha: 0.75),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(duration: 400.ms, delay: 400.ms)
-                      .slideY(begin: 0.2, end: 0),
-
-                  const Spacer(),
-
-                  AppButton(
-                        onPressed: () => context.go(AppRoutes.home),
-                        variant: AppButtonVariant.filled,
-                        size: AppButtonSize.large,
-                        backgroundColor: AppThemeExtension.brandOrange,
-                        foregroundColor: Colors.white,
-                        width: double.infinity,
-                        child: const Text('Continue'),
-                      )
-                      .animate()
-                      .fadeIn(duration: 400.ms, delay: 500.ms)
-                      .slideY(begin: 0.3, end: 0),
-
-                  const SizedBox(height: AppConstants.spacingLg),
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
