@@ -471,45 +471,79 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      // Matches _showPauseOverlay: the sheet below draws its own drag
+      // handle as part of its glass surface, so the theme's default
+      // showDragHandle:true (bottomSheetTheme in app_theme.dart) would
+      // otherwise draw a second, redundant one behind it.
+      showDragHandle: false,
       builder:
-          (context) => Container(
-            padding: const EdgeInsets.all(AppConstants.spacingLg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Cell Options',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: AppConstants.spacingLg),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    AppButton(
-                      onPressed: () {
-                        ref
-                            .read(gameControllerProvider.notifier)
-                            .clearCell(row, col);
-                        Navigator.pop(context);
-                      },
-                      variant: AppButtonVariant.outlined,
-                      child: const Text('Clear'),
+          (context) => SizedBox(
+            width: double.infinity,
+            child: GlassSurface(
+              variant: GlassVariant.strong,
+              tintColor:
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Colors.black.withValues(alpha: 0.95)
+                      : null,
+              topLeftRadius: AppConstants.largeBorderRadius,
+              topRightRadius: AppConstants.largeBorderRadius,
+              bottomLeftRadius: 0,
+              bottomRightRadius: 0,
+              padding: const EdgeInsets.all(AppConstants.spacingLg),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(
+                      bottom: AppConstants.spacingLg,
                     ),
-                    AppButton(
-                      onPressed: () {
-                        // Toggle note mode for this cell
-                        Navigator.pop(context);
-                      },
-                      variant: AppButtonVariant.filled,
-                      child: Text(
-                        gameState.notes[row][col].isNotEmpty
-                            ? 'Clear Notes'
-                            : 'Add Notes',
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  Text(
+                    'Cell Options',
+                    style: Theme.of(context).textTheme.headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: AppConstants.spacingLg),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      AppButton(
+                        onPressed: () {
+                          ref
+                              .read(gameControllerProvider.notifier)
+                              .clearCell(row, col);
+                          Navigator.pop(context);
+                        },
+                        variant: AppButtonVariant.outlined,
+                        child: const Text('Clear'),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      AppButton(
+                        onPressed: () {
+                          // Toggle note mode for this cell
+                          Navigator.pop(context);
+                        },
+                        variant: AppButtonVariant.filled,
+                        child: Text(
+                          gameState.notes[row][col].isNotEmpty
+                              ? 'Clear Notes'
+                              : 'Add Notes',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppConstants.spacingLg),
+                ],
+              ),
             ),
           ),
     );

@@ -71,19 +71,25 @@ class AppTheme {
           TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
         },
       ),
+      // Every screen header — light or dark, regular or 3D — shares this one
+      // definition: brand-orange fill, white text/icons, the same height
+      // and title size throughout. Screens that build their own header
+      // (Statistics' SliverAppBar) pull straight from this theme rather
+      // than hardcoding their own colors/sizes, so there's exactly one
+      // place this ever needs to change.
       appBarTheme: AppBarTheme(
         elevation: 0,
-        scrolledUnderElevation: 1,
-        backgroundColor: colorScheme.surface,
-        foregroundColor: colorScheme.onSurface,
-        surfaceTintColor: colorScheme.primaryContainer,
+        scrolledUnderElevation: 0,
+        backgroundColor: AppThemeExtension.brandOrange,
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         centerTitle: true,
         titleTextStyle: textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w600,
-          color: colorScheme.onSurface,
+          color: Colors.white,
         ),
-        iconTheme: IconThemeData(color: colorScheme.onSurface),
-        actionsIconTheme: IconThemeData(color: colorScheme.onSurface),
+        iconTheme: const IconThemeData(color: Colors.white),
+        actionsIconTheme: const IconThemeData(color: Colors.white),
       ),
       cardTheme: CardThemeData(
         elevation: 1,
@@ -697,21 +703,9 @@ class AppTheme {
       canvasColor: colorScheme.surface,
       cardColor: colorScheme.surface,
       dividerColor: colorScheme.outlineVariant,
-      // lightTheme.appBarTheme's iconTheme/actionsIconTheme were baked with
-      // the LIGHT colorScheme's onSurface — copyWith doesn't recompute
-      // nested theme objects, so every AppBar's back button (most of them
-      // rely on Flutter's auto-generated one, with no per-screen color to
-      // override) would otherwise stay that light-mode color here too.
-      appBarTheme: lightTheme.appBarTheme.copyWith(
-        backgroundColor: colorScheme.surface,
-        foregroundColor: colorScheme.onSurface,
-        titleTextStyle: textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: colorScheme.onSurface,
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
-        actionsIconTheme: const IconThemeData(color: Colors.white),
-      ),
+      // Same brand-orange/white header as light mode — headers deliberately
+      // don't follow brightness, so this is identical to lightTheme's.
+      appBarTheme: lightTheme.appBarTheme,
       focusColor: colorScheme.primary.withValues(alpha: 0.12),
       hoverColor: colorScheme.primary.withValues(alpha: 0.08),
       highlightColor: colorScheme.primary.withValues(alpha: 0.12),

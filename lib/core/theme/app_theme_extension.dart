@@ -51,6 +51,16 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
   static const Color brandOrangeLight = Color(0xFFFFB74D);
   static const Color brandBlue = Color(0xFF1976D2);
 
+  /// The same light-sheen-into-[brandOrange] treatment [GlassSurface] gives
+  /// an accent-tinted button (see its `tintColor != null` gradient branch),
+  /// reused flat here so every screen header reads as the same material as
+  /// the app's primary orange buttons rather than a plain solid fill.
+  static LinearGradient get headerGradient => LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color.lerp(brandOrange, Colors.white, 0.35)!, brandOrange],
+  );
+
   final Color cellBackground;
   final Color cellBorder;
   final Color cellSelectedBackground;

@@ -20,6 +20,7 @@ class CubePauseSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final extension = theme.extension<AppThemeExtension>()!;
     final colorScheme = theme.colorScheme;
     final cubeState = ref.watch(cubeGameControllerProvider);
 
@@ -76,8 +77,10 @@ class CubePauseSheet extends ConsumerWidget {
             const SizedBox(height: AppConstants.spacingMd),
             AppButton(
               onPressed: () => context.go(AppRoutes.home),
-              variant: AppButtonVariant.outlined,
+              variant: AppButtonVariant.filled,
               size: AppButtonSize.large,
+              glassTint: extension.difficultyEasyColor.withValues(alpha: 0.85),
+              foregroundColor: Colors.white,
               icon: const Icon(Icons.home_rounded),
               child: const Text('Main Menu'),
             ),
@@ -92,10 +95,10 @@ class CubePauseSheet extends ConsumerWidget {
                 }
                 context.pop();
               },
-              // Outlined, not a second filled/tinted CTA — Resume is the one
-              // action this sheet should weight as primary.
-              variant: AppButtonVariant.outlined,
+              variant: AppButtonVariant.filled,
               size: AppButtonSize.large,
+              glassTint: extension.difficultyEasyColor.withValues(alpha: 0.85),
+              foregroundColor: Colors.white,
               icon: const Icon(Icons.refresh_rounded),
               child: const Text('Restart Cube'),
             ),

@@ -280,6 +280,9 @@ class _CompletionScreenState extends ConsumerState<CompletionScreen>
                               },
                               variant: AppButtonVariant.filled,
                               size: AppButtonSize.large,
+                              glassTint: AppThemeExtension.brandOrange
+                                  .withValues(alpha: 0.85),
+                              foregroundColor: Colors.white,
                               icon: const Icon(Icons.refresh_rounded),
                               child: const Text('Play Next'),
                             )

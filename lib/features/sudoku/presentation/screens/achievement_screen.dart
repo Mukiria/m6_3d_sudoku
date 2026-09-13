@@ -5,6 +5,7 @@ import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/achievement.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
+import 'package:m6_sudoku/shared/widgets/app_header_bar.dart';
 import 'package:m6_sudoku/shared/widgets/buttons.dart';
 import 'package:m6_sudoku/shared/widgets/glass/glass_surface.dart';
 
@@ -19,7 +20,7 @@ class AchievementScreen extends ConsumerWidget {
     final achievementsAsync = ref.watch(achievementsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Achievements'), centerTitle: true),
+      appBar: const AppHeaderBar(title: Text('Achievements')),
       body: achievementsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error:

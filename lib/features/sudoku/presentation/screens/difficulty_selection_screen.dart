@@ -7,6 +7,7 @@ import 'package:m6_sudoku/core/routing/app_router.dart';
 import 'package:m6_sudoku/features/settings/presentation/providers/settings_provider.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/widgets/difficulty_picker.dart';
+import 'package:m6_sudoku/shared/widgets/app_header_bar.dart';
 
 class DifficultySelectionScreen extends ConsumerWidget {
   const DifficultySelectionScreen({super.key});
@@ -18,7 +19,7 @@ class DifficultySelectionScreen extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Select Difficulty'), centerTitle: true),
+      appBar: const AppHeaderBar(title: Text('Select Difficulty')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppConstants.spacingLg),

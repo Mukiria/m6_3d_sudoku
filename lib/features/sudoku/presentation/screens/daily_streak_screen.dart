@@ -16,11 +16,13 @@ const List<String> _weekdayLabels = [
   'Sat',
 ];
 
-/// Flat backdrop color for this screen — matches Home's.
+/// Flat backdrop color for this screen in light mode — matches Home's. Dark
+/// mode uses a plain black backdrop with white text instead, also matching
+/// Home.
 const Color _backgroundColor = Color(0xFFFFFBF2);
 
-/// Text color for content laid directly over [_backgroundColor], no scrim
-/// behind it.
+/// Text color for content laid directly over [_backgroundColor] in light
+/// mode, no scrim behind it.
 const Color _textColor = Color(0xFF2C2A28);
 
 /// Shown once, right after the first puzzle of the day is completed —
@@ -44,11 +46,14 @@ class DailyStreakScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final backgroundColor = isDark ? Colors.black : _backgroundColor;
+    final textColor = isDark ? Colors.white : _textColor;
 
     return Scaffold(
       // Same flat backdrop color as the Home screen, for a consistent
       // identity across the app's "moment" screens.
-      backgroundColor: _backgroundColor,
+      backgroundColor: backgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppConstants.spacingLg),
@@ -60,7 +65,7 @@ class DailyStreakScreen extends StatelessWidget {
                 'Daily Streak',
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: _textColor,
+                  color: textColor,
                 ),
               ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.2, end: 0),
 
@@ -86,7 +91,7 @@ class DailyStreakScreen extends StatelessWidget {
                     'You\'re one grid closer to Sudoku mastery!',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      color: _textColor.withValues(alpha: 0.75),
+                      color: textColor.withValues(alpha: 0.75),
                       fontWeight: FontWeight.w500,
                     ),
                   )
@@ -100,7 +105,9 @@ class DailyStreakScreen extends StatelessWidget {
                     onPressed: () => context.go(AppRoutes.home),
                     variant: AppButtonVariant.filled,
                     size: AppButtonSize.large,
-                    backgroundColor: AppThemeExtension.brandOrange,
+                    glassTint: AppThemeExtension.brandOrange.withValues(
+                      alpha: 0.85,
+                    ),
                     foregroundColor: Colors.white,
                     width: double.infinity,
                     child: const Text('Continue'),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/features/settings/presentation/providers/settings_provider.dart';
 import 'package:m6_sudoku/features/statistics/presentation/providers/statistics_provider.dart';
+import 'package:m6_sudoku/shared/widgets/app_header_bar.dart';
 import 'package:m6_sudoku/shared/widgets/cards.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -12,17 +13,13 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final settings = ref.watch(settingsProvider);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: AppHeaderBar(
         title: const Text('Settings'),
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_rounded,
-            color: theme.brightness == Brightness.dark ? Colors.white : null,
-          ),
+          icon: const Icon(Icons.arrow_back_rounded),
           tooltip: 'Back',
           onPressed: () => context.pop(),
         ),

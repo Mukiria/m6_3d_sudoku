@@ -1,5 +1,3 @@
-import 'dart:ui' show lerpDouble;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,9 +7,9 @@ import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
 import 'package:m6_sudoku/features/statistics/domain/entities/statistics.dart';
 import 'package:m6_sudoku/features/statistics/presentation/providers/statistics_provider.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
+import 'package:m6_sudoku/shared/widgets/app_header_bar.dart';
 import 'package:m6_sudoku/shared/widgets/buttons.dart';
 import 'package:m6_sudoku/shared/widgets/cards.dart';
-import 'package:m6_sudoku/shared/widgets/glass/glass_surface.dart';
 
 class StatisticsScreen extends ConsumerWidget {
   const StatisticsScreen({super.key});
@@ -29,35 +27,25 @@ class StatisticsScreen extends ConsumerWidget {
     return statisticsAsync.when(
       loading:
           () => Scaffold(
-            appBar: AppBar(
+            appBar: AppHeaderBar(
               leading: IconButton(
-                icon: Icon(
-                  Icons.arrow_back_rounded,
-                  color:
-                      theme.brightness == Brightness.dark ? Colors.white : null,
-                ),
+                icon: const Icon(Icons.arrow_back_rounded),
                 tooltip: 'Home',
                 onPressed: onBack,
               ),
               title: const Text('Statistics'),
-              centerTitle: true,
             ),
             body: const Center(child: CircularProgressIndicator()),
           ),
       error:
           (error, stack) => Scaffold(
-            appBar: AppBar(
+            appBar: AppHeaderBar(
               leading: IconButton(
-                icon: Icon(
-                  Icons.arrow_back_rounded,
-                  color:
-                      theme.brightness == Brightness.dark ? Colors.white : null,
-                ),
+                icon: const Icon(Icons.arrow_back_rounded),
                 tooltip: 'Home',
                 onPressed: onBack,
               ),
               title: const Text('Statistics'),
-              centerTitle: true,
             ),
             body: Center(
               child: Column(
@@ -79,12 +67,22 @@ class StatisticsScreen extends ConsumerWidget {
           (stats) => Scaffold(
             body: CustomScrollView(
               slivers: [
-                SliverPersistentHeader(
+                SliverAppBar(
                   pinned: true,
-                  delegate: _GlassAppBarDelegate(
-                    title: 'Statistics',
-                    onBack: onBack,
+                  backgroundColor: Colors.transparent,
+                  flexibleSpace: SizedBox.expand(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: AppThemeExtension.headerGradient,
+                      ),
+                    ),
                   ),
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    tooltip: 'Home',
+                    onPressed: onBack,
+                  ),
+                  title: const Text('Statistics'),
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
@@ -594,78 +592,6 @@ class StatisticsScreen extends ConsumerWidget {
             ],
           ),
     );
-  }
-}
-
-/// A glass top bar that shrinks as the page scrolls — the one screen in the
-/// app whose header genuinely needs to respond to scroll position, since it
-/// sits over the same long list of cards its blur is meant to reveal.
-class _GlassAppBarDelegate extends SliverPersistentHeaderDelegate {
-  _GlassAppBarDelegate({required this.title, required this.onBack});
-
-  final String title;
-  final VoidCallback onBack;
-
-  static const double _expandedHeight = 96;
-  static const double _collapsedHeight = 56;
-
-  @override
-  double get minExtent => _collapsedHeight;
-
-  @override
-  double get maxExtent => _expandedHeight;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    final t = (shrinkOffset / (_expandedHeight - _collapsedHeight)).clamp(
-      0.0,
-      1.0,
-    );
-    final theme = Theme.of(context);
-
-    return GlassSurface(
-      cornerRadius: 0,
-      padding: EdgeInsets.only(bottom: lerpDouble(16, 6, t)!),
-      child: SafeArea(
-        bottom: false,
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: Row(
-            children: [
-              IconButton(
-                icon: Icon(
-                  Icons.arrow_back_rounded,
-                  color:
-                      theme.brightness == Brightness.dark ? Colors.white : null,
-                ),
-                tooltip: 'Home',
-                onPressed: onBack,
-              ),
-              Expanded(
-                child: Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: lerpDouble(26, 18, t),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 48),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(covariant _GlassAppBarDelegate oldDelegate) {
-    return title != oldDelegate.title || onBack != oldDelegate.onBack;
   }
 }
 

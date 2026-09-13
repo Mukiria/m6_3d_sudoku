@@ -18,9 +18,12 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final backgroundColor = isDark ? Colors.black : _HomeColors.background;
+    final textColor = isDark ? Colors.white : _HomeColors.text;
 
     return Scaffold(
-      backgroundColor: _HomeColors.background,
+      backgroundColor: backgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppConstants.spacingLg),
@@ -206,7 +209,16 @@ class HomeScreen extends ConsumerWidget {
                   fit: BoxFit.contain,
                   excludeFromSemantics: true,
                 ),
-              ).animate().fadeIn(duration: 400.ms, delay: 650.ms),
+              )
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 650.ms)
+                  .slideY(
+                    begin: 1.0,
+                    end: 0,
+                    duration: 500.ms,
+                    delay: 650.ms,
+                    curve: Curves.easeOutCubic,
+                  ),
 
               const SizedBox(height: AppConstants.spacingSm),
 
@@ -214,7 +226,7 @@ class HomeScreen extends ConsumerWidget {
               Text(
                 'Version ${AppConstants.appVersion}',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: _HomeColors.text.withValues(alpha: 0.6),
+                  color: textColor.withValues(alpha: 0.6),
                 ),
                 textAlign: TextAlign.center,
               ).animate().fadeIn(duration: 300.ms, delay: 700.ms),
@@ -242,7 +254,8 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// Background and text/icon color for the home screen's flat backdrop.
+/// Background and text color for the home screen's flat backdrop in light
+/// mode — dark mode uses a plain black backdrop with white text instead.
 class _HomeColors {
   _HomeColors._();
 
@@ -268,6 +281,9 @@ class _QuickActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : _HomeColors.text;
+
     return AppCard(
       padding: const EdgeInsets.symmetric(vertical: 14),
       onTap: onPressed,
@@ -278,10 +294,7 @@ class _QuickActionButton extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: _HomeColors.text,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: textColor, fontWeight: FontWeight.w600),
           ),
         ],
       ),

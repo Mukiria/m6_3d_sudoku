@@ -250,8 +250,9 @@ class _CubeCompletionScreenState extends ConsumerState<CubeCompletionScreen> {
                                             ),
                                         variant: AppButtonVariant.filled,
                                         size: AppButtonSize.large,
-                                        backgroundColor:
-                                            AppThemeExtension.brandOrange,
+                                        glassTint: AppThemeExtension
+                                            .brandOrange
+                                            .withValues(alpha: 0.85),
                                         foregroundColor: Colors.white,
                                         icon: const Icon(Icons.refresh_rounded),
                                         child: const Text('New 3D Sudoku'),

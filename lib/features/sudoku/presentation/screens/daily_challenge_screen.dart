@@ -7,6 +7,7 @@ import 'package:m6_sudoku/core/routing/app_router.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/daily_challenge.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
+import 'package:m6_sudoku/shared/widgets/app_header_bar.dart';
 import 'package:m6_sudoku/shared/widgets/buttons.dart';
 
 class DailyChallengeScreen extends ConsumerStatefulWidget {
@@ -27,9 +28,8 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
     final statsAsync = ref.watch(dailyChallengeStatsProvider);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: AppHeaderBar(
         title: const Text('Daily Challenge'),
-        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -199,118 +199,115 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
     ColorScheme colorScheme,
     DailyChallengeStats stats,
   ) {
-    return Column(
-      children: [
-        _buildStatItem(
-          theme,
-          extension,
-          colorScheme,
-          'Played',
-          stats.totalPlayed.toString(),
-          Icons.games_rounded,
-          extension.difficultyMediumColor,
-          fullWidth: true,
-        ),
-        const SizedBox(height: AppConstants.spacingMd),
-        _buildStatItem(
-          theme,
-          extension,
-          colorScheme,
-          'Completed',
-          stats.totalCompleted.toString(),
-          Icons.check_circle_rounded,
-          extension.difficultyEasyColor,
-          fullWidth: true,
-        ),
-        const SizedBox(height: AppConstants.spacingMd),
-        _buildStatItem(
-          theme,
-          extension,
-          colorScheme,
-          'Streak',
-          '${stats.currentStreak}',
-          Icons.local_fire_department_rounded,
-          extension.difficultyHardColor,
-          fullWidth: true,
-        ),
-        const SizedBox(height: AppConstants.spacingMd),
-        _buildStatItem(
-          theme,
-          extension,
-          colorScheme,
-          'Best Time',
-          stats.bestStreak > 0 ? _formatTime(stats.bestStreak) : '--',
-          Icons.timer_rounded,
-          extension.difficultyExpertColor,
-          fullWidth: true,
-        ),
-      ],
+    // Two per row (50% width each), matching StatisticsScreen's stat
+    // cards — computed from the actual available width, not a fixed
+    // fraction, so this stays correct at any screen size.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth =
+            (constraints.maxWidth - AppConstants.spacingMd) / 2;
+        return Wrap(
+          spacing: AppConstants.spacingMd,
+          runSpacing: AppConstants.spacingMd,
+          children: [
+            SizedBox(
+              width: cardWidth,
+              child: _buildStatItem(
+                theme,
+                colorScheme,
+                'Played',
+                stats.totalPlayed.toString(),
+                Icons.games_rounded,
+                extension.difficultyMediumColor,
+              ),
+            ),
+            SizedBox(
+              width: cardWidth,
+              child: _buildStatItem(
+                theme,
+                colorScheme,
+                'Completed',
+                stats.totalCompleted.toString(),
+                Icons.check_circle_rounded,
+                extension.difficultyEasyColor,
+              ),
+            ),
+            SizedBox(
+              width: cardWidth,
+              child: _buildStatItem(
+                theme,
+                colorScheme,
+                'Streak',
+                '${stats.currentStreak}',
+                Icons.local_fire_department_rounded,
+                extension.difficultyHardColor,
+              ),
+            ),
+            SizedBox(
+              width: cardWidth,
+              child: _buildStatItem(
+                theme,
+                colorScheme,
+                'Best Time',
+                stats.bestStreak > 0 ? _formatTime(stats.bestStreak) : '--',
+                Icons.timer_rounded,
+                extension.difficultyExpertColor,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildStatItem(
     ThemeData theme,
-    AppThemeExtension extension,
     ColorScheme colorScheme,
     String label,
     String value,
     IconData icon,
-    Color color, {
-    bool fullWidth = false,
-  }) {
+    Color color,
+  ) {
     return Container(
-      width: fullWidth ? double.infinity : null,
       padding: const EdgeInsets.all(AppConstants.spacingMd),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppConstants.borderRadius),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child:
-          fullWidth
-              ? Row(
-                children: [
-                  Icon(icon, color: color, size: 24),
-                  const SizedBox(width: AppConstants.spacingMd),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        label,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      Text(
-                        value,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: color,
-                        ),
-                      ),
-                    ],
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(width: AppConstants.spacingSm),
+          // Expanded + ellipsis so a long value (or a narrow phone) clips
+          // gracefully instead of overflowing this half-width card.
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
-                ],
-              )
-              : Column(
-                children: [
-                  Icon(icon, color: color, size: 24),
-                  const SizedBox(height: AppConstants.spacingXs),
-                  Text(
-                    value,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: color,
-                    ),
+                ),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: color,
                   ),
-                  Text(
-                    label,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -519,6 +516,8 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           },
           variant: AppButtonVariant.filled,
           size: AppButtonSize.large,
+          glassTint: AppThemeExtension.brandOrange.withValues(alpha: 0.85),
+          foregroundColor: Colors.white,
           icon: const Icon(Icons.play_arrow_rounded),
           child: const Text('Start Challenge'),
         ).animate().fadeIn(delay: 300.ms).slideY(),

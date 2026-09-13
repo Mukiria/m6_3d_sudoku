@@ -7,6 +7,7 @@ import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
 import 'package:m6_sudoku/features/cube_sudoku/domain/entities/cube_face.dart';
 import 'package:m6_sudoku/features/settings/presentation/providers/settings_provider.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
+import 'package:m6_sudoku/shared/widgets/app_header_bar.dart';
 import 'package:m6_sudoku/shared/widgets/buttons.dart';
 
 /// Lets the player choose a difficulty for each of the six cube faces
@@ -49,10 +50,7 @@ class _CubeDifficultySelectionScreenState
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('M6 3D Sudoku Setup'),
-        centerTitle: true,
-      ),
+      appBar: const AppHeaderBar(title: Text('M6 3D Sudoku Setup')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppConstants.spacingLg),
@@ -85,7 +83,9 @@ class _CubeDifficultySelectionScreenState
                 onPressed: _start,
                 variant: AppButtonVariant.filled,
                 size: AppButtonSize.large,
-                backgroundColor: AppThemeExtension.brandOrange,
+                glassTint: AppThemeExtension.brandOrange.withValues(
+                  alpha: 0.85,
+                ),
                 foregroundColor: Colors.white,
                 icon: const Icon(Icons.view_in_ar_rounded),
                 child: const Text('Start 3D Sudoku'),
