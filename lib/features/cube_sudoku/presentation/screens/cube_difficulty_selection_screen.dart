@@ -193,7 +193,7 @@ class _FaceSummaryTile extends StatelessWidget {
       case Difficulty.expert:
         return extension.difficultyExpertColor;
       case Difficulty.evil:
-        return extension.difficultyHardColor;
+        return extension.difficultyEvilColor;
     }
   }
 }

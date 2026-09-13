@@ -43,6 +43,7 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     required this.difficultyMediumColor,
     required this.difficultyHardColor,
     required this.difficultyExpertColor,
+    required this.difficultyEvilColor,
   });
 
   /// Fixed brand colors that stay constant across light and dark themes.
@@ -91,6 +92,7 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
   final Color difficultyMediumColor;
   final Color difficultyHardColor;
   final Color difficultyExpertColor;
+  final Color difficultyEvilColor;
 
   static const AppThemeExtension light = AppThemeExtension(
     cellBackground: Color(0xFFFFFFFF),
@@ -132,8 +134,9 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     progressForeground: Color(0xFF1976D2),
     difficultyEasyColor: Color(0xFF4CAF50),
     difficultyMediumColor: Color(0xFFFF9800),
-    difficultyHardColor: Color(0xFFFF5722),
+    difficultyHardColor: Color(0xFF1976D2),
     difficultyExpertColor: Color(0xFF9C27B0),
+    difficultyEvilColor: Color(0xFFD32F2F),
   );
 
   static const AppThemeExtension dark = AppThemeExtension(
@@ -176,8 +179,9 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     progressForeground: Color(0xFF90CAF9),
     difficultyEasyColor: Color(0xFF81C784),
     difficultyMediumColor: Color(0xFFFFB74D),
-    difficultyHardColor: Color(0xFFFF8A65),
+    difficultyHardColor: Color(0xFF64B5F6),
     difficultyExpertColor: Color(0xFFCE93D8),
+    difficultyEvilColor: Color(0xFFEF5350),
   );
 
   @override
@@ -223,6 +227,7 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     Color? difficultyMediumColor,
     Color? difficultyHardColor,
     Color? difficultyExpertColor,
+    Color? difficultyEvilColor,
   }) {
     return AppThemeExtension(
       cellBackground: cellBackground ?? this.cellBackground,
@@ -280,6 +285,7 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       difficultyHardColor: difficultyHardColor ?? this.difficultyHardColor,
       difficultyExpertColor:
           difficultyExpertColor ?? this.difficultyExpertColor,
+      difficultyEvilColor: difficultyEvilColor ?? this.difficultyEvilColor,
     );
   }
 
@@ -382,6 +388,8 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
           Color.lerp(difficultyHardColor, other.difficultyHardColor, t)!,
       difficultyExpertColor:
           Color.lerp(difficultyExpertColor, other.difficultyExpertColor, t)!,
+      difficultyEvilColor:
+          Color.lerp(difficultyEvilColor, other.difficultyEvilColor, t)!,
     );
   }
 }

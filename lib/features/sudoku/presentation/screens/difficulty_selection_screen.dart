@@ -33,30 +33,33 @@ class DifficultySelectionScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppConstants.spacingLg),
               Expanded(
-                child: ListView(
-                  children:
-                      Difficulty.values.map((difficulty) {
-                        final index = Difficulty.values.indexOf(difficulty);
-                        final isSelected =
-                            settings.selectedDifficulty == difficulty.name;
+                child: ListView.separated(
+                  itemCount: Difficulty.values.length,
+                  separatorBuilder:
+                      (context, index) =>
+                          const SizedBox(height: AppConstants.spacingMd),
+                  itemBuilder: (context, index) {
+                    final difficulty = Difficulty.values[index];
+                    final isSelected =
+                        settings.selectedDifficulty == difficulty.name;
 
-                        return DifficultyPicker(
-                              difficulty: difficulty,
-                              isSelected: isSelected,
-                              onTap: () {
-                                ref
-                                    .read(settingsProvider.notifier)
-                                    .updateDifficulty(difficulty.name);
-                                context.push(
-                                  AppRoutes.puzzleLoading,
-                                  extra: difficulty.name,
-                                );
-                              },
-                            )
-                            .animate()
-                            .fadeIn(duration: 300.ms, delay: (index * 100).ms)
-                            .slideX(begin: 0.2, end: 0);
-                      }).toList(),
+                    return DifficultyPicker(
+                          difficulty: difficulty,
+                          isSelected: isSelected,
+                          onTap: () {
+                            ref
+                                .read(settingsProvider.notifier)
+                                .updateDifficulty(difficulty.name);
+                            context.push(
+                              AppRoutes.puzzleLoading,
+                              extra: difficulty.name,
+                            );
+                          },
+                        )
+                        .animate()
+                        .fadeIn(duration: 300.ms, delay: (index * 100).ms)
+                        .slideX(begin: 0.2, end: 0);
+                  },
                 ),
               ),
             ],
