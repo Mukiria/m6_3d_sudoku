@@ -17,7 +17,11 @@ plugins {
 android {
     namespace = "com.msixv.m6sudoku"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Pinned above flutter.ndkVersion's default (26.3.11579264) — several
+    // plugins (audioplayers, flutter_native_splash, path_provider,
+    // shared_preferences, url_launcher) require 27.0.12077973, and NDK is
+    // backward compatible, so building against the higher version is safe.
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
