@@ -10,7 +10,7 @@ This is **M6 Sudoku**, a production-quality Flutter mobile/web game combining a 
 - **State management:** `flutter_riverpod` + `riverpod_generator`/`riverpod_annotation` (code-generated providers, `.g.dart` files)
 - **Routing:** `go_router` (declarative, with custom transitions)
 - **Data modeling:** `freezed`/`freezed_annotation` (immutable unions/entities) + `json_serializable`/`json_annotation` for persistence; `equatable` for value equality; `dartz` for functional `Either<Failure, T>` error handling
-- **UI/UX:** Material 3, `google_fonts`, `flutter_animate`, `flutter_staggered_animations`, `confetti`, `fl_chart` (statistics charts), `flutter_svg`, `vector_math` (used for cube 3D geometry)
+- **UI/UX:** Material 3, `google_fonts`, `flutter_animate`, `flutter_staggered_animations`, `confetti`, `fl_chart` (statistics charts), `flutter_svg`, `vector_math` (used for cube 3D geometry). Layered on top is an in-house "Liquid Glass" material system (`lib/shared/widgets/glass/`, `lib/core/theme/glass_tokens.dart`, `lib/core/motion/springs.dart`) approximating Apple's translucent-material design language via `BackdropFilter` blur + tint + a specular-gradient overlay + a custom continuous-corner `SquircleBorder`, with spring-physics motion presets — no new dependency, built from Flutter's own painting/animation APIs.
 - **Persistence:** `shared_preferences` (all storage is local key-value JSON, no server/database)
 - **Other:** `audioplayers` (sound), `uuid`, `logger`, `intl` (i18n scaffolding via `flutter_intl`), `url_launcher`
 - **Dev tooling:** `build_runner`, `flutter_lints` + `custom_lint`/`riverpod_lint`, `mockito`, `flutter_launcher_icons`, `flutter_native_splash`
@@ -22,7 +22,9 @@ Clean Architecture + feature-first modules, consistently applied:
 
 ```
 lib/
-├── core/            # cross-cutting: constants, routing (GoRouter), theme,
+├── core/            # cross-cutting: constants, routing (GoRouter), theme
+│                       (incl. glass_tokens.dart — the Liquid Glass material
+│                       extension), motion (spring-curve presets),
 │                       storage_service (SharedPreferences wrapper),
 │                       json_store (shared JSON encode/decode helper),
 │                       errors (Failure/Exception types), audio, utils
@@ -45,14 +47,18 @@ lib/
 │   │                    its own achievement usecases and local datasource
 │   ├── settings/       theme/sound/haptics/etc., same layered pattern
 │   └── statistics/     win/loss/time/streak stats, same layered pattern
-└── shared/widgets/    reusable buttons/cards
+└── shared/widgets/    reusable buttons/cards, plus glass/ (GlassSurface,
+                         SquircleBorder, GlassButtonSurface — the shared
+                         Liquid Glass material primitives) and
+                         pausable_blur.dart (the animated shrink+blur used
+                         to hide a puzzle behind its pause sheet)
 ```
 
 Each feature follows **domain → data → presentation** with repository interfaces decoupling storage from business logic, and `Either<Failure, T>` (via `dartz`) as the standard error-handling return type throughout data/domain layers. The Sudoku *engine* (solver/generator/validator) is deliberately kept as plain, dependency-free Dart under `engine/`, separate from the domain/data/presentation Clean Architecture layers — notable because it's built to run inside a `compute()` isolate for puzzle generation (keeps UI responsive on higher difficulties). The 3D cube feature was added later as a **parallel, independent feature module** rather than a modification of the existing game (confirmed by both code comments and git log — see commits `d6706f6`, `60af5ed`).
 
 ## 4. Entry Points
 
-- **App entry:** `lib/main.dart` — initializes `SharedPreferences`, builds a Riverpod `ProviderContainer`, eagerly restores any in-progress classic game *and* any in-progress cube game before first frame (so "Continue Game" is accurate immediately), then runs `M6SudokuApp` (a `MaterialApp.router` wired to `goRouterProvider`).
+- **App entry:** `lib/main.dart` — initializes `SharedPreferences`, builds a Riverpod `ProviderContainer`, eagerly restores any in-progress classic game *and* any in-progress cube game before first frame (so "Continue Game" is accurate immediately), then runs `M6SudokuApp` (a `MaterialApp.router` wired to `goRouterProvider`). `M6SudokuApp` also observes `WidgetsBindingObserver` and flushes both games' state to storage on `paused`/`hidden`/`detached` lifecycle transitions, so "Continue" reflects the exact moment a player backgrounds or closes the app, not just their last in-game move.
 - **Routing table:** `lib/core/routing/app_router.dart` defines all routes (`/`, `/game`, `/cube-game`, `/daily`, `/achievements`, `/statistics`, `/settings`, etc.) with custom slide/fade transitions per route.
 - **Build commands** (from `README.md`, verified against CI workflows): `flutter pub get` → `dart run build_runner build --delete-conflicting-outputs` → `flutter run` / `flutter build apk|ios|web --release`.
 
@@ -87,12 +93,12 @@ dart run flutter_native_splash:create                        # regenerate splash
 
 CI (`ci.yml`, runs on every push/PR to main/master) pins Flutter 3.29.3, generates code, applies `dart fix --apply`, formats, analyzes, tests with coverage, and builds a split-per-ABI release APK as an artifact. A separate manual `BuildAPK.yml` does the same on `workflow_dispatch`. `release.yml` builds APK+AAB and publishes a GitHub Release on `v*` tags (uses an older pinned Flutter 3.24.0 — a minor inconsistency, see below).
 
-**Test suite:** 25 test files under `test/`, covering engine logic (solver/generator/validator), datasources, repositories, entities, Riverpod providers/notifiers (including cube-specific completion and save/load flows), and a couple of widget tests. No integration/e2e (`integration_test/`) directory was found.
+**Test suite:** 26 test files under `test/`, covering engine logic (solver/generator/validator), datasources, repositories, entities, Riverpod providers/notifiers (including cube-specific completion and save/load flows), and a set of widget tests (including pause/blur behavior and the cube's auto-advance-on-face-completion flow). No integration/e2e (`integration_test/`) directory was found. One known, pre-existing environmental flake: the isolate-based puzzle-generation test (`newGame initializes with correct puzzle for difficulty`) occasionally times out under load — confirmed non-reproducible on repeated clean runs, not a code defect.
 
 ## 8. Notable Observations
 
-- **Uncommitted changes at session start:** `assets/images/m6-sudoku-logo.png` and `m6_sudoku_logo.png` are modified but unstaged (binary diffs only, sizes changed) — worth confirming with the user whether these are intentional in-progress logo edits before doing anything with them.
-- **One genuine TODO:** `lib/features/sudoku/domain/usecases/achievement_usecases.dart:53` — `// TODO: Implement difficulty tracking`, indicating an achievement usecase is incomplete.
+- **Liquid Glass design language, applied app-wide:** shared surfaces (buttons, cards, the regular/cube game's top docks and number pads, pause sheets, dialogs, Statistics' scroll-adaptive header) render through the `GlassSurface` primitive described above, in both light and dark theme. Caller-supplied colors — brand-orange CTAs' accent tint, semantic stat/achievement tiles, a selected difficulty card — deliberately stay solid rather than glass, since glass is meant to change container material, not override intentional semantic color. The one caveat worth knowing: this is a `BackdropFilter`-based approximation, not real-time GPU refraction (Flutter has no equivalent), and it's been retrofitted onto plain `Container`/`Card` widgets one at a time, so a handful of screens (e.g. some Achievement-screen tiles) are intentionally left solid rather than converted.
+- **`achievement_usecases.dart`'s difficulty-tracking TODO is resolved:** "Master of All" (win on every difficulty) now credits via `EvaluateAchievementDeltasUseCase.distinctProgressCredits` and `IncrementAchievementProgressBatchUseCase`'s `distinctProgress` param, rather than a plain per-win counter that couldn't distinguish "5 different difficulties" from "the same difficulty 5 times."
 - **CI Flutter version drift:** `ci.yml`/`BuildAPK.yml` pin Flutter `3.29.3` while `release.yml` still pins `3.24.0` — the release pipeline could build against a materially older toolchain than what CI validates against.
 - **Code comments show deliberate engineering discipline**, not just boilerplate: e.g. `main.dart` explains *why* both classic and cube games are eagerly restored before first frame, `json_store.dart` explains why it's deliberately kept thin rather than a general ORM, and `puzzle_generator.dart` documents why generation runs in a `compute()` isolate. This suggests a codebase maintained with care rather than one accumulating unreviewed AI-generated cruft.
 - **iOS/macOS/Windows/Linux platform folders exist** in the repo (standard Flutter scaffolding) despite `pubspec.yaml`/CI only really targeting Android+Web and the changelog listing those as future work — likely dormant scaffolding rather than actively maintained targets; worth flagging as ambiguous rather than assuming intent.
