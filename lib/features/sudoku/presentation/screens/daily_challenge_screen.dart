@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
-import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
-import 'package:m6_sudoku/shared/widgets/buttons.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/daily_challenge.dart';
 import 'package:m6_sudoku/core/routing/app_router.dart';
+import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/daily_challenge.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
+import 'package:m6_sudoku/shared/widgets/buttons.dart';
 
 class DailyChallengeScreen extends ConsumerStatefulWidget {
   const DailyChallengeScreen({super.key});
@@ -135,14 +135,14 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           decoration: BoxDecoration(
             color:
                 isCompleted
-                    ? extension.difficultyEasyColor!.withValues(alpha: 0.1)
-                    : extension.difficultyMediumColor!.withValues(alpha: 0.1),
+                    ? extension.difficultyEasyColor.withValues(alpha: 0.1)
+                    : extension.difficultyMediumColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color:
                   isCompleted
-                      ? extension.difficultyEasyColor!
-                      : extension.difficultyMediumColor!,
+                      ? extension.difficultyEasyColor
+                      : extension.difficultyMediumColor,
               width: 1.5,
             ),
           ),
@@ -156,8 +156,8 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
                 size: 16,
                 color:
                     isCompleted
-                        ? extension.difficultyEasyColor!
-                        : extension.difficultyMediumColor!,
+                        ? extension.difficultyEasyColor
+                        : extension.difficultyMediumColor,
               ),
               const SizedBox(width: 8),
               Text(
@@ -166,8 +166,8 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
                   fontWeight: FontWeight.w600,
                   color:
                       isCompleted
-                          ? extension.difficultyEasyColor!
-                          : extension.difficultyMediumColor!,
+                          ? extension.difficultyEasyColor
+                          : extension.difficultyMediumColor,
                 ),
               ),
             ],
@@ -208,7 +208,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           'Played',
           stats.totalPlayed.toString(),
           Icons.games_rounded,
-          extension.difficultyMediumColor!,
+          extension.difficultyMediumColor,
           fullWidth: true,
         ),
         const SizedBox(height: AppConstants.spacingMd),
@@ -219,7 +219,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           'Completed',
           stats.totalCompleted.toString(),
           Icons.check_circle_rounded,
-          extension.difficultyEasyColor!,
+          extension.difficultyEasyColor,
           fullWidth: true,
         ),
         const SizedBox(height: AppConstants.spacingMd),
@@ -230,7 +230,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           'Streak',
           '${stats.currentStreak}',
           Icons.local_fire_department_rounded,
-          extension.difficultyHardColor!,
+          extension.difficultyHardColor,
           fullWidth: true,
         ),
         const SizedBox(height: AppConstants.spacingMd),
@@ -241,7 +241,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           'Best Time',
           stats.bestStreak > 0 ? _formatTime(stats.bestStreak) : '--',
           Icons.timer_rounded,
-          extension.difficultyExpertColor!,
+          extension.difficultyExpertColor,
           fullWidth: true,
         ),
       ],
@@ -326,13 +326,13 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            extension.difficultyEasyColor!.withValues(alpha: 0.2),
-            extension.difficultyEasyColor!.withValues(alpha: 0.05),
+            extension.difficultyEasyColor.withValues(alpha: 0.2),
+            extension.difficultyEasyColor.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(AppConstants.largeBorderRadius),
         border: Border.all(
-          color: extension.difficultyEasyColor!.withValues(alpha: 0.3),
+          color: extension.difficultyEasyColor.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -343,7 +343,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: extension.difficultyEasyColor!,
+                  color: extension.difficultyEasyColor,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -361,7 +361,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
                       'Challenge Completed!',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: extension.difficultyEasyColor!,
+                        color: extension.difficultyEasyColor,
                       ),
                     ),
                     Text(
@@ -385,7 +385,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
                   label: 'Time',
                   value: _formatTime(challenge.timeElapsed ?? 0),
                   icon: Icons.timer_rounded,
-                  color: extension.timerText!,
+                  color: extension.timerText,
                 ),
               ),
               const SizedBox(width: AppConstants.spacingMd),
@@ -396,7 +396,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
                   label: 'Mistakes',
                   value: '${challenge.mistakes}/3',
                   icon: Icons.close_rounded,
-                  color: extension.mistakeIndicatorColor!,
+                  color: extension.mistakeIndicatorColor,
                 ),
               ),
               const SizedBox(width: AppConstants.spacingMd),
@@ -407,7 +407,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
                   label: 'Hints',
                   value: '${challenge.hintsUsed}/3',
                   icon: Icons.lightbulb_rounded,
-                  color: extension.hintIndicatorColor!,
+                  color: extension.hintIndicatorColor,
                 ),
               ),
             ],
@@ -468,13 +468,13 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                extension.difficultyMediumColor!.withValues(alpha: 0.2),
-                extension.difficultyMediumColor!.withValues(alpha: 0.05),
+                extension.difficultyMediumColor.withValues(alpha: 0.2),
+                extension.difficultyMediumColor.withValues(alpha: 0.05),
               ],
             ),
             borderRadius: BorderRadius.circular(AppConstants.largeBorderRadius),
             border: Border.all(
-              color: extension.difficultyMediumColor!.withValues(alpha: 0.3),
+              color: extension.difficultyMediumColor.withValues(alpha: 0.3),
             ),
           ),
           child: Stack(
@@ -485,9 +485,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
                 child: Icon(
                   Icons.grid_3x3_rounded,
                   size: 120,
-                  color: extension.difficultyMediumColor!.withValues(
-                    alpha: 0.1,
-                  ),
+                  color: extension.difficultyMediumColor.withValues(alpha: 0.1),
                 ),
               ),
               Center(
@@ -498,7 +496,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
                       'Play Daily Challenge',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: extension.difficultyMediumColor!,
+                        color: extension.difficultyMediumColor,
                       ),
                     ),
                     const SizedBox(height: AppConstants.spacingXs),
@@ -597,14 +595,10 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: extension.difficultyMediumColor!.withValues(alpha: 0.1),
+              color: extension.difficultyMediumColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: extension.difficultyMediumColor!,
-            ),
+            child: Icon(icon, size: 20, color: extension.difficultyMediumColor),
           ),
           const SizedBox(width: AppConstants.spacingMd),
           Expanded(

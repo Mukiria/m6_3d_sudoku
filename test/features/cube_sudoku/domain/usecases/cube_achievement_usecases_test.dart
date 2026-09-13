@@ -77,20 +77,23 @@ void main() {
       expect(deltas['first_cube'], 1);
     });
 
-    test('credits flawless_cube only with 0 total mistakes and 0 total hints', () {
-      final flawless = useCase(_completedCube());
-      expect(flawless['flawless_cube'], 1);
+    test(
+      'credits flawless_cube only with 0 total mistakes and 0 total hints',
+      () {
+        final flawless = useCase(_completedCube());
+        expect(flawless['flawless_cube'], 1);
 
-      final oneMistake = useCase(
-        _completedCube(mistakesByFace: {CubeFace.back: 1}),
-      );
-      expect(oneMistake['flawless_cube'], isNull);
+        final oneMistake = useCase(
+          _completedCube(mistakesByFace: {CubeFace.back: 1}),
+        );
+        expect(oneMistake['flawless_cube'], isNull);
 
-      final oneHint = useCase(
-        _completedCube(hintsByFace: {CubeFace.left: 1}),
-      );
-      expect(oneHint['flawless_cube'], isNull);
-    });
+        final oneHint = useCase(
+          _completedCube(hintsByFace: {CubeFace.left: 1}),
+        );
+        expect(oneHint['flawless_cube'], isNull);
+      },
+    );
 
     test('credits speed_cuber under 1200 seconds, not at or above', () {
       final fast = useCase(_completedCube(timeElapsed: 1199));
@@ -103,7 +106,9 @@ void main() {
     test('credits evil_cube only when every face is Evil difficulty', () {
       final allEvil = useCase(
         _completedCube(
-          difficulties: {for (final face in CubeFace.values) face: Difficulty.evil},
+          difficulties: {
+            for (final face in CubeFace.values) face: Difficulty.evil,
+          },
         ),
       );
       expect(allEvil['evil_cube'], 1);

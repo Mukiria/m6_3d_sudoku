@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:m6_sudoku/features/sudoku/engine/generator/puzzle_generator.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/board.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/cell.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 import 'package:m6_sudoku/features/sudoku/engine/solver/sudoku_solver.dart';
 import 'package:m6_sudoku/features/sudoku/engine/validator/unique_solution_validator.dart';
-import 'package:m6_sudoku/features/sudoku/engine/generator/puzzle_generator.dart';
 
 void main() {
   group('Cell', () {
@@ -218,8 +218,10 @@ void main() {
     );
 
     test('same seed produces an identical complete grid every time', () {
-      final gridA = PuzzleGenerator(seed: 20260816).generateCompleteGrid().toGrid();
-      final gridB = PuzzleGenerator(seed: 20260816).generateCompleteGrid().toGrid();
+      final gridA =
+          PuzzleGenerator(seed: 20260816).generateCompleteGrid().toGrid();
+      final gridB =
+          PuzzleGenerator(seed: 20260816).generateCompleteGrid().toGrid();
       expect(gridA, equals(gridB));
     });
 
@@ -240,8 +242,10 @@ void main() {
     );
 
     test('different seeds produce different complete grids', () {
-      final gridA = PuzzleGenerator(seed: 20260816).generateCompleteGrid().toGrid();
-      final gridB = PuzzleGenerator(seed: 20260817).generateCompleteGrid().toGrid();
+      final gridA =
+          PuzzleGenerator(seed: 20260816).generateCompleteGrid().toGrid();
+      final gridB =
+          PuzzleGenerator(seed: 20260817).generateCompleteGrid().toGrid();
       expect(gridA, isNot(equals(gridB)));
     });
   });

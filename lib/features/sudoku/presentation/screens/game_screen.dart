@@ -2,19 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
-import 'package:m6_sudoku/shared/widgets/buttons.dart';
+import 'package:m6_sudoku/core/routing/app_router.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
+import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/game_provider.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/widgets/number_pad.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/widgets/achievement_unlock_banner.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/widgets/game_header.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/widgets/game_top_bar.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/widgets/hint_overlay.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/widgets/number_pad.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/widgets/pause_menu.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/widgets/sudoku_board.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/widgets/hint_overlay.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/widgets/achievement_unlock_banner.dart';
-import 'package:m6_sudoku/core/routing/app_router.dart';
-import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
+import 'package:m6_sudoku/shared/widgets/buttons.dart';
+import 'package:m6_sudoku/shared/widgets/glass/glass_surface.dart';
+import 'package:m6_sudoku/shared/widgets/pausable_blur.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key, required this.difficulty});
@@ -25,9 +27,11 @@ class GameScreen extends ConsumerStatefulWidget {
   ConsumerState<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends ConsumerState<GameScreen>
-    with TickerProviderStateMixin {
-  late TabController _tabController;
+class _GameScreenState extends ConsumerState<GameScreen> {
+  /// Whether the pause bottom sheet is currently up — drives the blurred
+  /// overlay in [build] so the puzzle can't be read behind it while paused,
+  /// and is the single signal (set in [_showPauseOverlay]) for pausing and
+  /// resuming both the game status and the timer.
   bool _showPauseMenu = false;
   bool _hasNavigated = false;
   bool _showHintOverlay = false;
@@ -45,8 +49,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(_onTabChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _startSession();
@@ -99,31 +101,36 @@ class _GameScreenState extends ConsumerState<GameScreen>
     }
   }
 
-  @override
-  void dispose() {
-    _tabController.removeListener(_onTabChanged);
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  void _onTabChanged() {
-    if (_tabController.index == 1) {
-      _showPauseMenu = true;
-      _showPauseOverlay();
-    }
-  }
-
+  /// Pauses the game (status + timer) and shows the pause sheet over a
+  /// blurred board — see [_showPauseMenu]. Resumes both, unconditionally,
+  /// once the sheet closes by any route (Resume, swipe-to-dismiss, tapping
+  /// the scrim, or the system back gesture re-invoking this while already
+  /// open is guarded against below): Restart/Main Menu each replace or
+  /// leave the session in their own way moments later, so resuming first is
+  /// harmless, and it's what guarantees paused never gets stuck as the
+  /// on-screen or saved state.
   void _showPauseOverlay() {
+    if (_showPauseMenu) return;
+    setState(() => _showPauseMenu = true);
+    ref.read(gameControllerProvider.notifier).pause();
+    ref.read(timerControllerProvider).pause();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      // PauseMenu draws its own drag handle as part of its glass sheet —
+      // without this, the theme's default showDragHandle:true (see
+      // bottomSheetTheme in app_theme.dart) draws a second one behind it.
+      // The old opaque sheet background hid that redundant handle; the
+      // translucent glass one doesn't.
+      showDragHandle: false,
       builder: (context) => const PauseMenu(),
     ).whenComplete(() {
-      _showPauseMenu = false;
-      if (mounted) {
-        _tabController.animateTo(0);
-      }
+      if (!mounted) return;
+      setState(() => _showPauseMenu = false);
+      ref.read(gameControllerProvider.notifier).resume();
+      ref.read(timerControllerProvider).resume();
     });
   }
 
@@ -272,78 +279,101 @@ class _GameScreenState extends ConsumerState<GameScreen>
             SafeArea(
               child: Column(
                 children: [
-                  GameTopBar(onBack: _showPauseOverlay),
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final header = ref.watch(
-                        gameControllerProvider.select(
-                          (s) => (
-                            difficulty:
-                                s!.puzzleId.startsWith('daily_')
-                                    ? 'daily'
-                                    : s.difficulty.name,
-                            timeElapsed: s.timeElapsed,
-                            mistakes: s.mistakes,
+                  GlassSurface(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: AppConstants.spacingMd,
+                      vertical: AppConstants.spacingSm,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppConstants.spacingMd,
+                      vertical: AppConstants.spacingSm,
+                    ),
+                    child: Column(
+                      children: [
+                        GameTopBar(onBack: _showPauseOverlay),
+                        Divider(
+                          height: AppConstants.spacingMd,
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.4,
                           ),
                         ),
-                      );
-                      return GameHeader(
-                        difficulty: header.difficulty,
-                        timeElapsed: header.timeElapsed,
-                        mistakes: header.mistakes,
-                        onPause: _showPauseOverlay,
-                      );
-                    },
+                        Consumer(
+                          builder: (context, ref, _) {
+                            final header = ref.watch(
+                              gameControllerProvider.select(
+                                (s) => (
+                                  difficulty:
+                                      s!.puzzleId.startsWith('daily_')
+                                          ? 'daily'
+                                          : s.difficulty.name,
+                                  timeElapsed: s.timeElapsed,
+                                  mistakes: s.mistakes,
+                                ),
+                              ),
+                            );
+                            return GameHeader(
+                              difficulty: header.difficulty,
+                              timeElapsed: header.timeElapsed,
+                              mistakes: header.mistakes,
+                              onPause: _showPauseOverlay,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                   Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppConstants.spacingSm,
-                      ),
-                      child: Consumer(
-                        builder: (context, ref, _) {
-                          final board = ref.watch(
-                            gameControllerProvider.select(
-                              (s) => (
-                                puzzle: s!.puzzle,
-                                userGrid: s.userGrid,
-                                notes: s.notes,
-                                selectedCell: s.selectedCell,
-                                highlightedCells: s.highlightedCells,
-                                conflictCells: s.conflictCells,
-                                isNoteMode: s.isNoteMode,
+                    child: PausableBlur(
+                      paused: _showPauseMenu,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppConstants.spacingSm,
+                        ),
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final board = ref.watch(
+                              gameControllerProvider.select(
+                                (s) => (
+                                  puzzle: s!.puzzle,
+                                  userGrid: s.userGrid,
+                                  notes: s.notes,
+                                  selectedCell: s.selectedCell,
+                                  highlightedCells: s.highlightedCells,
+                                  conflictCells: s.conflictCells,
+                                  isNoteMode: s.isNoteMode,
+                                ),
                               ),
-                            ),
-                          );
-                          final showPencilMarks = ref.watch(
-                            showPencilMarksProvider,
-                          );
-                          return SudokuBoard(
-                            puzzle: board.puzzle,
-                            userGrid: board.userGrid,
-                            notes:
-                                showPencilMarks
-                                    ? board.notes
-                                    : _emptyNotesGrid(),
-                            selectedCell: board.selectedCell,
-                            highlightedCells: board.highlightedCells,
-                            conflictCells: board.conflictCells,
-                            isNoteMode: board.isNoteMode,
-                            selectionEpoch: _selectionEpoch,
-                            onCellTap:
-                                (row, col) => ref
-                                    .read(gameControllerProvider.notifier)
-                                    .selectCell(row, col),
-                            onCellLongPress: (row, col) {
-                              final gameState = ref.read(
-                                gameControllerProvider,
-                              );
-                              if (gameState != null) {
-                                _showCellOptions(row, col, gameState);
-                              }
-                            },
-                          );
-                        },
+                            );
+                            final showPencilMarks = ref.watch(
+                              showPencilMarksProvider,
+                            );
+                            return SudokuBoard(
+                              puzzle: board.puzzle,
+                              userGrid: board.userGrid,
+                              notes:
+                                  showPencilMarks
+                                      ? board.notes
+                                      : _emptyNotesGrid(),
+                              selectedCell: board.selectedCell,
+                              highlightedCells: board.highlightedCells,
+                              conflictCells: board.conflictCells,
+                              isNoteMode: board.isNoteMode,
+                              selectionEpoch: _selectionEpoch,
+                              onCellTap:
+                                  (row, col) => ref
+                                      .read(gameControllerProvider.notifier)
+                                      .selectCell(row, col),
+                              onCellLongPress: (row, col) {
+                                final gameState = ref.read(
+                                  gameControllerProvider,
+                                );
+                                if (gameState != null) {
+                                  _showCellOptions(row, col, gameState);
+                                }
+                              },
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),

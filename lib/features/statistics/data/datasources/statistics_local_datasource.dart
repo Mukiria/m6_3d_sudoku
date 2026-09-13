@@ -1,8 +1,8 @@
 import 'package:dartz/dartz.dart';
-import 'package:m6_sudoku/features/statistics/domain/entities/statistics.dart';
+import 'package:m6_sudoku/core/errors/failures.dart';
 import 'package:m6_sudoku/core/services/json_store.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';
-import 'package:m6_sudoku/core/errors/failures.dart';
+import 'package:m6_sudoku/features/statistics/domain/entities/statistics.dart';
 
 class StatisticsLocalDataSource {
   StatisticsLocalDataSource(StorageService storage)
@@ -57,7 +57,7 @@ class StatisticsLocalDataSource {
   }
 
   Statistics _defaultStatistics() {
-    return Statistics(
+    return const Statistics(
       gamesPlayed: 0,
       gamesWon: 0,
       currentStreak: 0,

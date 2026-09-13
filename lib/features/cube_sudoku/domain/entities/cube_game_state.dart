@@ -7,14 +7,6 @@ part 'cube_game_state.g.dart';
 
 @freezed
 class CubeGameState with _$CubeGameState {
-  /// Bumped whenever the persisted shape of [CubeGameState] changes in a way
-  /// that's not safely backward-compatible — mirrors
-  /// [GameState.currentSaveVersion]'s role for the regular single-puzzle
-  /// save. [CubeGameLocalDataSource] discards any saved cube session whose
-  /// `saveVersion` doesn't match this, rather than risk deserializing it
-  /// into a broken state.
-  static const int currentSaveVersion = 1;
-
   const factory CubeGameState({
     required String cubeId,
     // Keyed by CubeFace.name rather than CubeFace itself — json_serializable
@@ -37,6 +29,14 @@ class CubeGameState with _$CubeGameState {
       _$CubeGameStateFromJson(json);
 
   const CubeGameState._();
+
+  /// Bumped whenever the persisted shape of [CubeGameState] changes in a way
+  /// that's not safely backward-compatible — mirrors
+  /// [GameState.currentSaveVersion]'s role for the regular single-puzzle
+  /// save. [CubeGameLocalDataSource] discards any saved cube session whose
+  /// `saveVersion` doesn't match this, rather than risk deserializing it
+  /// into a broken state.
+  static const int currentSaveVersion = 1;
 
   GameState faceState(CubeFace face) => faceStates[face.name]!;
 

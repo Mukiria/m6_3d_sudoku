@@ -1,8 +1,8 @@
 import 'package:dartz/dartz.dart';
+import 'package:m6_sudoku/core/errors/failures.dart';
+import 'package:m6_sudoku/features/sudoku/data/datasources/achievement_local_datasource.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/achievement.dart';
 import 'package:m6_sudoku/features/sudoku/domain/repositories/achievement_repository.dart';
-import 'package:m6_sudoku/features/sudoku/data/datasources/achievement_local_datasource.dart';
-import 'package:m6_sudoku/core/errors/failures.dart';
 
 class AchievementRepositoryImpl implements AchievementRepository {
   AchievementRepositoryImpl(this._dataSource);
@@ -34,9 +34,13 @@ class AchievementRepositoryImpl implements AchievementRepository {
 
   @override
   Future<Either<Failure, List<Achievement>>> incrementProgressBatch(
-    Map<String, int> deltas,
-  ) {
-    return _dataSource.incrementProgressBatch(deltas);
+    Map<String, int> deltas, {
+    Map<String, String> distinctProgress = const {},
+  }) {
+    return _dataSource.incrementProgressBatch(
+      deltas,
+      distinctProgress: distinctProgress,
+    );
   }
 
   @override

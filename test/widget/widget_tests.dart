@@ -1,11 +1,11 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/widgets/sudoku_board.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/widgets/number_pad.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/widgets/game_header.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/widgets/game_header.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/widgets/number_pad.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/widgets/sudoku_board.dart';
 
 void main() {
   group('SudokuBoard Widget Tests', () {
@@ -46,8 +46,8 @@ void main() {
             userGrid: testUserGrid,
             notes: testNotes,
             selectedCell: null,
-            highlightedCells: {},
-            conflictCells: {},
+            highlightedCells: const {},
+            conflictCells: const {},
             isNoteMode: false,
             selectionEpoch: 0,
             onCellTap: (row, col) {},
@@ -107,7 +107,7 @@ void main() {
                 const CellPosition(row: 2, col: 0),
                 const CellPosition(row: 0, col: 2),
               },
-              conflictCells: {},
+              conflictCells: const {},
               isNoteMode: false,
               selectionEpoch: 0,
               onCellTap: (row, col) {},
@@ -133,7 +133,7 @@ void main() {
               userGrid: testUserGrid,
               notes: testNotes,
               selectedCell: null,
-              highlightedCells: {},
+              highlightedCells: const {},
               conflictCells: {const CellPosition(row: 2, col: 2)},
               isNoteMode: false,
               selectionEpoch: 0,
@@ -163,8 +163,8 @@ void main() {
               userGrid: testUserGrid,
               notes: testNotes,
               selectedCell: null,
-              highlightedCells: {},
-              conflictCells: {},
+              highlightedCells: const {},
+              conflictCells: const {},
               isNoteMode: false,
               selectionEpoch: 0,
               onCellTap: (row, col) {

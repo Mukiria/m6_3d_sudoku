@@ -136,7 +136,10 @@ void main() {
       expect(loaded.activeFace, original.activeFace);
       expect(loaded.timeElapsed, original.timeElapsed);
       for (final face in CubeFace.values) {
-        expect(loaded.faceState(face).puzzleId, original.faceState(face).puzzleId);
+        expect(
+          loaded.faceState(face).puzzleId,
+          original.faceState(face).puzzleId,
+        );
       }
     });
 

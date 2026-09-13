@@ -1,4 +1,4 @@
-import 'cell.dart';
+import 'package:m6_sudoku/features/sudoku/engine/models/cell.dart';
 
 class Board {
   Board({List<List<Cell>>? cells}) : _cells = cells ?? _createEmptyGrid() {

@@ -6,15 +6,16 @@ extension NullableExtensions<T> on T? {
   T orDefault(T defaultValue) => this ?? defaultValue;
 
   void ifNotNull(void Function(T value) action) {
-    if (this != null) action(this!);
+    if (this != null) action(this as T);
   }
 
   T? ifNotNullElse(T? Function() defaultValue) => this ?? defaultValue();
 
-  R? map<R>(R Function(T value) mapper) => this == null ? null : mapper(this!);
+  R? map<R>(R Function(T value) mapper) =>
+      this == null ? null : mapper(this as T);
 
   R mapOrElse<R>(R Function(T value) mapper, R Function() defaultValue) =>
-      this == null ? defaultValue() : mapper(this!);
+      this == null ? defaultValue() : mapper(this as T);
 }
 
 extension StringExtensions on String {

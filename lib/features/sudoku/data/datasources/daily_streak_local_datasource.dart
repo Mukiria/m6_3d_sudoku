@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/daily_streak.dart';
 import 'package:m6_sudoku/core/errors/failures.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/daily_streak.dart';
 
 class DailyStreakLocalDataSource {
   DailyStreakLocalDataSource(this._storage);

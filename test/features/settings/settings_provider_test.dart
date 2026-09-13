@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';
 import 'package:m6_sudoku/features/settings/presentation/providers/settings_provider.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('SettingsController', () {

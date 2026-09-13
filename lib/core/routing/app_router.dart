@@ -8,16 +8,16 @@ import 'package:m6_sudoku/features/cube_sudoku/presentation/screens/cube_difficu
 import 'package:m6_sudoku/features/cube_sudoku/presentation/screens/cube_game_screen.dart';
 import 'package:m6_sudoku/features/cube_sudoku/presentation/screens/cube_puzzle_loading_screen.dart';
 import 'package:m6_sudoku/features/home/presentation/screens/home_screen.dart';
-import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/screens/game_screen.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/screens/difficulty_selection_screen.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/screens/completion_screen.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/screens/daily_streak_screen.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/screens/puzzle_loading_screen.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/screens/daily_challenge_screen.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/screens/achievement_screen.dart';
-import 'package:m6_sudoku/features/statistics/presentation/screens/statistics_screen.dart';
 import 'package:m6_sudoku/features/settings/presentation/screens/settings_screen.dart';
+import 'package:m6_sudoku/features/statistics/presentation/screens/statistics_screen.dart';
+import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/screens/achievement_screen.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/screens/completion_screen.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/screens/daily_challenge_screen.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/screens/daily_streak_screen.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/screens/difficulty_selection_screen.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/screens/game_screen.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/screens/puzzle_loading_screen.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/widgets/pause_menu.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {

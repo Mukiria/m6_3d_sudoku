@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/game_provider.dart';
+import 'package:m6_sudoku/shared/widgets/glass/glass_surface.dart';
 
 /// The game's control panel: an action row (Undo / Erase / Notes / Pencil
 /// Marks / Hint) followed by the 1-9 number row. Undo, Erase, Pencil Marks,
@@ -55,7 +56,6 @@ class NumberPad extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _ActionCard(
-          colorScheme: colorScheme,
           children: [
             _ActionButton(
               icon: Icons.undo_rounded,
@@ -126,7 +126,6 @@ class NumberPad extends ConsumerWidget {
         ),
         const SizedBox(height: AppConstants.spacingMd),
         _ActionCard(
-          colorScheme: colorScheme,
           children: List.generate(9, (index) {
             final number = index + 1;
             final isDisabled = disabledNumbers.contains(number);
@@ -165,30 +164,18 @@ class NumberPad extends ConsumerWidget {
   }
 }
 
-/// The rounded white card shared by the action row and the number row.
+/// The glass dock shared by the action row and the number row.
 class _ActionCard extends StatelessWidget {
-  const _ActionCard({required this.children, required this.colorScheme});
+  const _ActionCard({required this.children});
 
   final List<Widget> children;
-  final ColorScheme colorScheme;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassSurface(
       padding: const EdgeInsets.symmetric(
         horizontal: AppConstants.spacingSm,
         vertical: AppConstants.spacingSm,
-      ),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,

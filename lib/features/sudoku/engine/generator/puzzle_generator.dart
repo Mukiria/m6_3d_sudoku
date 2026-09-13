@@ -1,8 +1,8 @@
 import 'dart:math';
 
+import 'package:m6_sudoku/features/sudoku/engine/models/board.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
-import '../models/board.dart';
-import '../solver/sudoku_solver.dart';
+import 'package:m6_sudoku/features/sudoku/engine/solver/sudoku_solver.dart';
 
 /// Input for [generatePuzzleInBackground]. Kept to plain, isolate-sendable
 /// fields only (an enum and a nullable int) — no closures, no [Board] or
@@ -204,10 +204,9 @@ class PuzzleGenerator {
 }
 
 class _FastRandom {
-  int _seed;
-
   _FastRandom([int? seed])
     : _seed = seed ?? DateTime.now().microsecondsSinceEpoch;
+  int _seed;
 
   int nextInt(int max) {
     _seed = (_seed * 1664525 + 1013904223) & 0xFFFFFFFF;

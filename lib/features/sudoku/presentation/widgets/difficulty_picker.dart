@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
+import 'package:m6_sudoku/shared/widgets/glass/glass_surface.dart';
 
 /// A single difficulty option — clues count, an estimated time, and a
 /// selected/unselected visual state.
@@ -36,7 +37,7 @@ class DifficultyPicker extends StatelessWidget {
 
     final difficultyColor = _colorFor(difficulty, extension);
 
-    return Material(
+    final content = Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
@@ -44,30 +45,27 @@ class DifficultyPicker extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.all(AppConstants.spacingLg),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(
-              AppConstants.largeBorderRadius,
-            ),
-            border: Border.all(
-              color:
-                  isSelected ? difficultyColor : theme.colorScheme.outlineVariant,
-              width: isSelected ? 2.5 : 1.5,
-            ),
-            color:
-                isSelected
-                    ? difficultyColor.withValues(alpha: 0.1)
-                    : theme.colorScheme.surface,
-            boxShadow:
-                isSelected
-                    ? [
+          // Selected is a semantic signal (this is the chosen difficulty),
+          // not decorative chrome, so it keeps its solid, color-coded
+          // highlight; unselected cards get their surface from the
+          // GlassSurface wrapping this content instead (see below).
+          decoration:
+              isSelected
+                  ? BoxDecoration(
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.largeBorderRadius,
+                    ),
+                    border: Border.all(color: difficultyColor, width: 2.5),
+                    color: difficultyColor.withValues(alpha: 0.1),
+                    boxShadow: [
                       BoxShadow(
                         color: difficultyColor.withValues(alpha: 0.2),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
-                    ]
-                    : null,
-          ),
+                    ],
+                  )
+                  : null,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -168,6 +166,13 @@ class DifficultyPicker extends StatelessWidget {
         ),
       ),
     );
+
+    return isSelected
+        ? content
+        : GlassSurface(
+          cornerRadius: AppConstants.largeBorderRadius,
+          child: content,
+        );
   }
 
   Color _colorFor(Difficulty difficulty, AppThemeExtension extension) {

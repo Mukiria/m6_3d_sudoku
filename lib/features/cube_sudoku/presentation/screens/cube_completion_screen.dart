@@ -125,132 +125,164 @@ class _CubeCompletionScreenState extends ConsumerState<CubeCompletionScreen> {
               ),
             ),
             child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(AppConstants.spacingLg),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Spacer(),
-                    Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: AppThemeExtension.brandOrange,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppThemeExtension.brandOrange
-                                    .withValues(alpha: 0.3),
-                                blurRadius: 20,
-                                spreadRadius: 5,
+              // A fixed Column with Spacer()s can't live inside a scroll
+              // view (Spacer needs bounded height from its Flex parent),
+              // but six faces' worth of breakdown rows plus the stats and
+              // buttons can overflow a short screen or a large text-scale
+              // setting. LayoutBuilder + ConstrainedBox(minHeight) +
+              // IntrinsicHeight keeps the same "centered when it fits"
+              // look on tall screens while letting it scroll instead of
+              // overflowing when it doesn't.
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: IntrinsicHeight(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppConstants.spacingLg),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(height: AppConstants.spacingXl),
+                              Container(
+                                    width: 120,
+                                    height: 120,
+                                    decoration: BoxDecoration(
+                                      color: AppThemeExtension.brandOrange,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppThemeExtension.brandOrange
+                                              .withValues(alpha: 0.3),
+                                          blurRadius: 20,
+                                          spreadRadius: 5,
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.view_in_ar_rounded,
+                                      color: Colors.white,
+                                      size: 60,
+                                    ),
+                                  )
+                                  .animate()
+                                  .scale(
+                                    duration: 600.ms,
+                                    curve: Curves.elasticOut,
+                                  )
+                                  .then()
+                                  .shimmer(duration: 1000.ms),
+
+                              const SizedBox(height: AppConstants.spacingXl),
+
+                              Semantics(
+                                liveRegion: true,
+                                label: 'Cube complete! All six faces solved.',
+                                child: Text(
+                                      'Cube Complete!',
+                                      style: theme.textTheme.displaySmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    )
+                                    .animate()
+                                    .fadeIn(duration: 400.ms, delay: 300.ms)
+                                    .slideY(begin: 0.3, end: 0),
                               ),
+
+                              const SizedBox(height: AppConstants.spacingSm),
+
+                              Text(
+                                    'All six faces solved',
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  )
+                                  .animate()
+                                  .fadeIn(duration: 400.ms, delay: 400.ms)
+                                  .slideY(begin: 0.3, end: 0),
+
+                              const SizedBox(height: AppConstants.spacingXl),
+
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  _CompletionStat(
+                                    icon: Icons.timer_rounded,
+                                    label: 'Time',
+                                    value: _formatTime(cubeState.timeElapsed),
+                                    color: AppThemeExtension.brandBlue,
+                                    delay: 500,
+                                  ),
+                                  _CompletionStat(
+                                    icon: Icons.close_rounded,
+                                    label: 'Mistakes',
+                                    value: '$totalMistakes',
+                                    color: colorScheme.error,
+                                    delay: 600,
+                                  ),
+                                  _CompletionStat(
+                                    icon: Icons.lightbulb_rounded,
+                                    label: 'Hints',
+                                    value: '$totalHints',
+                                    color: Colors.amber.shade800,
+                                    delay: 700,
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: AppConstants.spacingXl),
+
+                              _FaceBreakdown(cubeState: cubeState),
+
+                              const SizedBox(height: AppConstants.spacingXl),
+
+                              Column(
+                                children: [
+                                  AppButton(
+                                        onPressed:
+                                            () => context.go(
+                                              AppRoutes.cubeDifficulty,
+                                            ),
+                                        variant: AppButtonVariant.filled,
+                                        size: AppButtonSize.large,
+                                        backgroundColor:
+                                            AppThemeExtension.brandOrange,
+                                        foregroundColor: Colors.white,
+                                        icon: const Icon(Icons.refresh_rounded),
+                                        child: const Text('New 3D Sudoku'),
+                                      )
+                                      .animate()
+                                      .fadeIn(duration: 400.ms, delay: 800.ms)
+                                      .slideY(begin: 0.3, end: 0),
+                                  const SizedBox(
+                                    height: AppConstants.spacingMd,
+                                  ),
+                                  AppButton(
+                                        onPressed:
+                                            () => context.go(AppRoutes.home),
+                                        variant: AppButtonVariant.outlined,
+                                        size: AppButtonSize.large,
+                                        icon: const Icon(Icons.home_rounded),
+                                        child: const Text('Main Menu'),
+                                      )
+                                      .animate()
+                                      .fadeIn(duration: 400.ms, delay: 900.ms)
+                                      .slideY(begin: 0.3, end: 0),
+                                ],
+                              ),
+                              const SizedBox(height: AppConstants.spacingXl),
                             ],
                           ),
-                          child: const Icon(
-                            Icons.view_in_ar_rounded,
-                            color: Colors.white,
-                            size: 60,
-                          ),
-                        )
-                        .animate()
-                        .scale(duration: 600.ms, curve: Curves.elasticOut)
-                        .then()
-                        .shimmer(duration: 1000.ms),
-
-                    const SizedBox(height: AppConstants.spacingXl),
-
-                    Semantics(
-                      liveRegion: true,
-                      label: 'Cube complete! All six faces solved.',
-                      child: Text(
-                            'Cube Complete!',
-                            style: theme.textTheme.displaySmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          )
-                          .animate()
-                          .fadeIn(duration: 400.ms, delay: 300.ms)
-                          .slideY(begin: 0.3, end: 0),
-                    ),
-
-                    const SizedBox(height: AppConstants.spacingSm),
-
-                    Text(
-                          'All six faces solved',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        )
-                        .animate()
-                        .fadeIn(duration: 400.ms, delay: 400.ms)
-                        .slideY(begin: 0.3, end: 0),
-
-                    const SizedBox(height: AppConstants.spacingXl),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _CompletionStat(
-                          icon: Icons.timer_rounded,
-                          label: 'Time',
-                          value: _formatTime(cubeState.timeElapsed),
-                          color: AppThemeExtension.brandBlue,
-                          delay: 500,
                         ),
-                        _CompletionStat(
-                          icon: Icons.close_rounded,
-                          label: 'Mistakes',
-                          value: '$totalMistakes',
-                          color: colorScheme.error,
-                          delay: 600,
-                        ),
-                        _CompletionStat(
-                          icon: Icons.lightbulb_rounded,
-                          label: 'Hints',
-                          value: '$totalHints',
-                          color: Colors.amber.shade800,
-                          delay: 700,
-                        ),
-                      ],
+                      ),
                     ),
-
-                    const SizedBox(height: AppConstants.spacingXl),
-
-                    _FaceBreakdown(cubeState: cubeState),
-
-                    const Spacer(),
-
-                    Column(
-                      children: [
-                        AppButton(
-                              onPressed:
-                                  () => context.go(AppRoutes.cubeDifficulty),
-                              variant: AppButtonVariant.filled,
-                              size: AppButtonSize.large,
-                              backgroundColor: AppThemeExtension.brandOrange,
-                              foregroundColor: Colors.white,
-                              icon: const Icon(Icons.refresh_rounded),
-                              child: const Text('New 3D Sudoku'),
-                            )
-                            .animate()
-                            .fadeIn(duration: 400.ms, delay: 800.ms)
-                            .slideY(begin: 0.3, end: 0),
-                        const SizedBox(height: AppConstants.spacingMd),
-                        AppButton(
-                              onPressed: () => context.go(AppRoutes.home),
-                              variant: AppButtonVariant.outlined,
-                              size: AppButtonSize.large,
-                              icon: const Icon(Icons.home_rounded),
-                              child: const Text('Main Menu'),
-                            )
-                            .animate()
-                            .fadeIn(duration: 400.ms, delay: 900.ms)
-                            .slideY(begin: 0.3, end: 0),
-                      ],
-                    ),
-                    const SizedBox(height: AppConstants.spacingXl),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
           ),

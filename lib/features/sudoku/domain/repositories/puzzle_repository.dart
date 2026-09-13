@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
 import 'package:m6_sudoku/core/errors/failures.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
 
 abstract class PuzzleRepository {
   Future<Either<Failure, Puzzle>> generatePuzzle(String difficulty);

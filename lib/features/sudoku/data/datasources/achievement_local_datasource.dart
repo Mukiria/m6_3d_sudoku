@@ -1,9 +1,10 @@
 import 'dart:convert';
+
 import 'package:dartz/dartz.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/achievement.dart';
 import 'package:m6_sudoku/core/errors/failures.dart';
 import 'package:m6_sudoku/core/services/json_store.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/achievement.dart';
 
 class AchievementLocalDataSource {
   AchievementLocalDataSource(this._storage) : _json = JsonStore(_storage);
@@ -12,12 +13,11 @@ class AchievementLocalDataSource {
   final JsonStore _json;
 
   static const String _achievementsKey = 'achievements';
-  static const String _achievementProgressKey = 'achievement_progress_';
 
   List<Achievement> getDefaultAchievements() {
     return [
       // Wins
-      Achievement(
+      const Achievement(
         id: 'first_win',
         name: 'First Victory',
         description: 'Win your first game',
@@ -28,7 +28,7 @@ class AchievementLocalDataSource {
         isUnlocked: false,
         isSecret: false,
       ),
-      Achievement(
+      const Achievement(
         id: 'ten_wins',
         name: 'Decade of Wins',
         description: 'Win 10 games',
@@ -39,7 +39,7 @@ class AchievementLocalDataSource {
         isUnlocked: false,
         isSecret: false,
       ),
-      Achievement(
+      const Achievement(
         id: 'hundred_wins',
         name: 'Century Club',
         description: 'Win 100 games',
@@ -52,7 +52,7 @@ class AchievementLocalDataSource {
       ),
 
       // Perfect Games
-      Achievement(
+      const Achievement(
         id: 'perfect_game',
         name: 'Perfectionist',
         description: 'Complete a game with 0 mistakes and 0 hints',
@@ -63,7 +63,7 @@ class AchievementLocalDataSource {
         isUnlocked: false,
         isSecret: false,
       ),
-      Achievement(
+      const Achievement(
         id: 'five_perfect',
         name: 'Flawless Five',
         description: 'Complete 5 perfect games',
@@ -76,7 +76,7 @@ class AchievementLocalDataSource {
       ),
 
       // No Hints
-      Achievement(
+      const Achievement(
         id: 'no_hints',
         name: 'Solo Solver',
         description: 'Complete a game without using hints',
@@ -87,7 +87,7 @@ class AchievementLocalDataSource {
         isUnlocked: false,
         isSecret: false,
       ),
-      Achievement(
+      const Achievement(
         id: 'ten_no_hints',
         name: 'Hintless Hero',
         description: 'Complete 10 games without hints',
@@ -100,7 +100,7 @@ class AchievementLocalDataSource {
       ),
 
       // Difficulty
-      Achievement(
+      const Achievement(
         id: 'expert_winner',
         name: 'Expert Champion',
         description: 'Win an Expert difficulty game',
@@ -111,7 +111,7 @@ class AchievementLocalDataSource {
         isUnlocked: false,
         isSecret: false,
       ),
-      Achievement(
+      const Achievement(
         id: 'evil_conqueror',
         name: 'Evil Conqueror',
         description: 'Win an Evil difficulty game',
@@ -122,7 +122,7 @@ class AchievementLocalDataSource {
         isUnlocked: false,
         isSecret: true,
       ),
-      Achievement(
+      const Achievement(
         id: 'all_difficulties',
         name: 'Master of All',
         description: 'Win at least once on every difficulty',
@@ -135,7 +135,7 @@ class AchievementLocalDataSource {
       ),
 
       // Speed
-      Achievement(
+      const Achievement(
         id: 'speed_runner',
         name: 'Speed Runner',
         description: 'Complete any game in under 3 minutes',
@@ -146,7 +146,7 @@ class AchievementLocalDataSource {
         isUnlocked: false,
         isSecret: false,
       ),
-      Achievement(
+      const Achievement(
         id: 'lightning',
         name: 'Lightning Fast',
         description: 'Complete an Easy game in under 1 minute',
@@ -159,7 +159,7 @@ class AchievementLocalDataSource {
       ),
 
       // Streak
-      Achievement(
+      const Achievement(
         id: 'streak_three',
         name: 'Hot Streak',
         description: 'Win 3 games in a row',
@@ -170,7 +170,7 @@ class AchievementLocalDataSource {
         isUnlocked: false,
         isSecret: false,
       ),
-      Achievement(
+      const Achievement(
         id: 'streak_ten',
         name: 'Unstoppable',
         description: 'Win 10 games in a row',
@@ -183,7 +183,7 @@ class AchievementLocalDataSource {
       ),
 
       // Special
-      Achievement(
+      const Achievement(
         id: 'daily_champion',
         name: 'Daily Champion',
         description: 'Complete 30 daily challenges',
@@ -194,7 +194,7 @@ class AchievementLocalDataSource {
         isUnlocked: false,
         isSecret: false,
       ),
-      Achievement(
+      const Achievement(
         id: 'night_owl',
         name: 'Night Owl',
         description: 'Complete a game between midnight and 4 AM',
@@ -205,7 +205,7 @@ class AchievementLocalDataSource {
         isUnlocked: false,
         isSecret: true,
       ),
-      Achievement(
+      const Achievement(
         id: 'early_bird',
         name: 'Early Bird',
         description: 'Complete a game between 4 AM and 7 AM',
@@ -218,7 +218,7 @@ class AchievementLocalDataSource {
       ),
 
       // Cube
-      Achievement(
+      const Achievement(
         id: 'first_cube',
         name: 'Cube Master',
         description: 'Solve all six faces of a 3D Sudoku cube',
@@ -229,7 +229,7 @@ class AchievementLocalDataSource {
         isUnlocked: false,
         isSecret: false,
       ),
-      Achievement(
+      const Achievement(
         id: 'flawless_cube',
         name: 'Flawless Cube',
         description: 'Solve a cube with zero mistakes and zero hints',
@@ -240,7 +240,7 @@ class AchievementLocalDataSource {
         isUnlocked: false,
         isSecret: false,
       ),
-      Achievement(
+      const Achievement(
         id: 'speed_cuber',
         name: 'Speed Cuber',
         description: 'Solve a cube in under 20 minutes',
@@ -251,7 +251,7 @@ class AchievementLocalDataSource {
         isUnlocked: false,
         isSecret: false,
       ),
-      Achievement(
+      const Achievement(
         id: 'evil_cube',
         name: 'Evil Six',
         description: 'Solve a cube with every face set to Evil difficulty',
@@ -364,24 +364,48 @@ class AchievementLocalDataSource {
     });
   }
 
-  /// Applies every entry in [deltas] (achievement id → progress delta)
-  /// against a single read-modify-write cycle, instead of one cycle per
-  /// achievement. Multiple achievements progressing from the same event
+  /// Applies every entry in [deltas] (achievement id → progress delta) and
+  /// [distinctProgress] (achievement id → distinct value credited this
+  /// call) against a single read-modify-write cycle, instead of one cycle
+  /// per achievement. Multiple achievements progressing from the same event
   /// (e.g. a game completion) previously each ran their own
   /// getAchievements()-then-save() round trip; firing those concurrently
   /// raced on the same storage key and could silently lose updates. Routing
   /// them all through one batch call removes the race entirely.
+  ///
+  /// [distinctProgress] is for achievements like 'all_difficulties' ("win on
+  /// every difficulty") that need to know *which* value was just credited,
+  /// not just that something was — a plain int delta can't tell a first win
+  /// on a new difficulty apart from a fifth win on the same one. Each entry
+  /// only advances [Achievement.progressKeys]/[Achievement.currentProgress]
+  /// the first time that particular key is seen; a repeat key is a no-op,
+  /// exactly like [amount] contributing 0 would be for a count-based one.
   Future<Either<Failure, List<Achievement>>> incrementProgressBatch(
-    Map<String, int> deltas,
-  ) async {
-    if (deltas.isEmpty) return const Right([]);
+    Map<String, int> deltas, {
+    Map<String, String> distinctProgress = const {},
+  }) async {
+    if (deltas.isEmpty && distinctProgress.isEmpty) return const Right([]);
     final result = await getAchievements();
     return result.fold((failure) => Left(failure), (achievements) async {
       final justUnlocked = <Achievement>[];
       for (var i = 0; i < achievements.length; i++) {
         final achievement = achievements[i];
-        final amount = deltas[achievement.id];
-        if (amount == null || achievement.isUnlocked) continue;
+        if (achievement.isUnlocked) continue;
+
+        final int amount;
+        List<String>? newProgressKeys;
+        final distinctKey = distinctProgress[achievement.id];
+        if (distinctKey != null) {
+          if (achievement.progressKeys.contains(distinctKey)) {
+            continue; // Already credited for this key — no further progress.
+          }
+          newProgressKeys = [...achievement.progressKeys, distinctKey];
+          amount = 1;
+        } else {
+          final plainAmount = deltas[achievement.id];
+          if (plainAmount == null) continue;
+          amount = plainAmount;
+        }
 
         final newProgress = (achievement.currentProgress + amount).clamp(
           0,
@@ -392,6 +416,7 @@ class AchievementLocalDataSource {
           currentProgress: newProgress,
           isUnlocked: unlockedNow,
           unlockedAt: unlockedNow ? DateTime.now() : null,
+          progressKeys: newProgressKeys ?? achievement.progressKeys,
         );
         achievements[i] = updated;
         if (unlockedNow) justUnlocked.add(updated);

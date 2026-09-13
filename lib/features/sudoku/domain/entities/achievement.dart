@@ -16,6 +16,14 @@ class Achievement with _$Achievement {
     required bool isUnlocked,
     DateTime? unlockedAt,
     required bool isSecret,
+
+    /// Distinct values already credited toward this achievement's progress
+    /// — e.g. 'all_difficulties' records which difficulty names it's seen a
+    /// win on, so a repeat win on the same difficulty doesn't count twice.
+    /// Ordinary count-based achievements (most of them) never touch this
+    /// and leave it empty; see
+    /// `IncrementAchievementProgressBatchUseCase`'s `distinctProgress` param.
+    @Default(<String>[]) List<String> progressKeys,
   }) = _Achievement;
 
   factory Achievement.fromJson(Map<String, dynamic> json) =>

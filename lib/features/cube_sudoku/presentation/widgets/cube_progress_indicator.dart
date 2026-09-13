@@ -89,11 +89,30 @@ class _FaceMarker extends StatelessWidget {
               height: 18,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: icon != null ? color : Colors.transparent,
+                // The active face gets a filled, glowing dot instead of a
+                // flat color swap — a soft "pop" standing in for SF
+                // Symbols' active-state fill, rather than a plain
+                // color/no-color toggle.
+                color:
+                    icon != null
+                        ? color
+                        : (isActive
+                            ? color.withValues(alpha: 0.18)
+                            : Colors.transparent),
                 border: Border.all(
                   color: color,
                   width: isActive && icon == null ? 2.5 : 1.5,
                 ),
+                boxShadow:
+                    isActive && icon == null
+                        ? [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.55),
+                            blurRadius: 6,
+                            spreadRadius: 1,
+                          ),
+                        ]
+                        : null,
               ),
               child:
                   icon != null

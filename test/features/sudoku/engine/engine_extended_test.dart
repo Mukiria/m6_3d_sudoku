@@ -167,7 +167,7 @@ void main() {
 
     test('candidates can be set', () {
       // bitmask for [1,2,3] is 0x001 | 0x002 | 0x004 = 0x007
-      final cell = Cell(row: 0, col: 0, candidates: 0x007);
+      const cell = Cell(row: 0, col: 0, candidates: 0x007);
       expect(cell.getCandidatesList(), [1, 2, 3]);
     });
 

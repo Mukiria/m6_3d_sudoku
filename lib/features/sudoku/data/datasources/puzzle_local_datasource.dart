@@ -1,13 +1,14 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show compute;
+
 import 'package:dartz/dartz.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
-import 'package:m6_sudoku/features/sudoku/engine/generator/puzzle_generator.dart';
-import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:m6_sudoku/core/errors/failures.dart';
 import 'package:m6_sudoku/core/services/json_store.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
+import 'package:m6_sudoku/features/sudoku/engine/generator/puzzle_generator.dart';
+import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 
 class PuzzleLocalDataSource {
   PuzzleLocalDataSource(this._storage, [PuzzleGenerator? generator])
@@ -113,9 +114,7 @@ class PuzzleLocalDataSource {
   }
 
   Future<Either<Failure, void>> saveGameState(GameState state) {
-    final versioned = state.copyWith(
-      saveVersion: GameState.currentSaveVersion,
-    );
+    final versioned = state.copyWith(saveVersion: GameState.currentSaveVersion);
     return _json.writeJson(
       _gameStateKey,
       versioned.toJson(),
@@ -124,10 +123,7 @@ class PuzzleLocalDataSource {
   }
 
   Future<Either<Failure, void>> clearGameState() {
-    return _json.removeKeys(
-      [_gameStateKey, _puzzleKey],
-      'clear game state',
-    );
+    return _json.removeKeys([_gameStateKey, _puzzleKey], 'clear game state');
   }
 
   Future<Either<Failure, List<Puzzle>>> getPuzzleHistory() async {

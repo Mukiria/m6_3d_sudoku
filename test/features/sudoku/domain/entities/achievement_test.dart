@@ -202,7 +202,7 @@ void main() {
 
   group('Achievement progress helpers', () {
     test('progress calculation works correctly', () {
-      final achievement = Achievement(
+      const achievement = Achievement(
         id: 'test',
         name: 'Test',
         description: 'Test',
@@ -221,7 +221,7 @@ void main() {
     });
 
     test('isCompleted returns true when target reached', () {
-      final unlocked = Achievement(
+      const unlocked = Achievement(
         id: 'test',
         name: 'Test',
         description: 'Test',

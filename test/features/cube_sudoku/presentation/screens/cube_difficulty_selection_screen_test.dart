@@ -31,48 +31,50 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
   }
 
-  testWidgets('renders a difficulty dropdown for each of the six faces, all defaulting to the same difficulty', (
-    tester,
-  ) async {
-    await useTallSurface(tester);
-    await tester.pumpWidget(_wrap(const CubeDifficultySelectionScreen()));
-    await tester.pump();
+  testWidgets(
+    'renders a difficulty dropdown for each of the six faces, all defaulting to the same difficulty',
+    (tester) async {
+      await useTallSurface(tester);
+      await tester.pumpWidget(_wrap(const CubeDifficultySelectionScreen()));
+      await tester.pump();
 
-    expect(find.text('Top face'), findsOneWidget);
-    expect(find.text('Bottom face'), findsOneWidget);
-    expect(find.text('Front face'), findsOneWidget);
-    expect(find.text('Back face'), findsOneWidget);
-    expect(find.text('Left face'), findsOneWidget);
-    expect(find.text('Right face'), findsOneWidget);
+      expect(find.text('Top face'), findsOneWidget);
+      expect(find.text('Bottom face'), findsOneWidget);
+      expect(find.text('Front face'), findsOneWidget);
+      expect(find.text('Back face'), findsOneWidget);
+      expect(find.text('Left face'), findsOneWidget);
+      expect(find.text('Right face'), findsOneWidget);
 
-    // A fresh SettingsController starts at its synchronous Settings()
-    // default (selectedDifficulty: 'easy') before its async load resolves
-    // — every face's dropdown should seed from that same default.
-    expect(find.text('Easy'), findsNWidgets(6));
-  });
+      // A fresh SettingsController starts at its synchronous Settings()
+      // default (selectedDifficulty: 'easy') before its async load resolves
+      // — every face's dropdown should seed from that same default.
+      expect(find.text('Easy'), findsNWidgets(6));
+    },
+  );
 
-  testWidgets('changing one face\'s difficulty only updates that face\'s tile', (
-    tester,
-  ) async {
-    await useTallSurface(tester);
-    await tester.pumpWidget(_wrap(const CubeDifficultySelectionScreen()));
-    await tester.pump();
+  testWidgets(
+    'changing one face\'s difficulty only updates that face\'s tile',
+    (tester) async {
+      await useTallSurface(tester);
+      await tester.pumpWidget(_wrap(const CubeDifficultySelectionScreen()));
+      await tester.pump();
 
-    // CubeFace.values order is Top, Bottom, Front, Back, Left, Right — the
-    // list renders in that order, so the first dropdown is the Top face's.
-    final dropdowns = find.byType(DropdownButton<Difficulty>);
-    expect(dropdowns, findsNWidgets(6));
-    await tester.tap(dropdowns.first);
-    await tester.pumpAndSettle();
+      // CubeFace.values order is Top, Bottom, Front, Back, Left, Right — the
+      // list renders in that order, so the first dropdown is the Top face's.
+      final dropdowns = find.byType(DropdownButton<Difficulty>);
+      expect(dropdowns, findsNWidgets(6));
+      await tester.tap(dropdowns.first);
+      await tester.pumpAndSettle();
 
-    // The dropdown menu lists every difficulty; tap the "Expert" entry.
-    await tester.tap(find.text('Expert').last);
-    await tester.pumpAndSettle();
+      // The dropdown menu lists every difficulty; tap the "Expert" entry.
+      await tester.tap(find.text('Expert').last);
+      await tester.pumpAndSettle();
 
-    expect(find.text('Expert'), findsOneWidget);
-    // The other five faces stayed at Easy.
-    expect(find.text('Easy'), findsNWidgets(5));
-  });
+      expect(find.text('Expert'), findsOneWidget);
+      // The other five faces stayed at Easy.
+      expect(find.text('Easy'), findsNWidgets(5));
+    },
+  );
 
   testWidgets('Start 3D Sudoku button is present and enabled', (tester) async {
     await useTallSurface(tester);

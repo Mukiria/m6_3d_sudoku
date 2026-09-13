@@ -48,30 +48,30 @@ void main() {
     final useCase = EvaluateAchievementDeltasUseCase();
 
     test('always credits the base win achievements', () {
-      final deltas = useCase(
-        _completedState(),
-        now: DateTime(2026, 1, 1, 12),
-      );
+      final deltas = useCase(_completedState(), now: DateTime(2026, 1, 1, 12));
       expect(deltas['first_win'], 1);
       expect(deltas['ten_wins'], 1);
       expect(deltas['hundred_wins'], 1);
     });
 
-    test('credits perfect-game achievements only with 0 mistakes and 0 hints', () {
-      final perfect = useCase(
-        _completedState(mistakes: 0, hintsUsed: 0),
-        now: DateTime(2026, 1, 1, 12),
-      );
-      expect(perfect['perfect_game'], 1);
-      expect(perfect['five_perfect'], 1);
+    test(
+      'credits perfect-game achievements only with 0 mistakes and 0 hints',
+      () {
+        final perfect = useCase(
+          _completedState(mistakes: 0, hintsUsed: 0),
+          now: DateTime(2026, 1, 1, 12),
+        );
+        expect(perfect['perfect_game'], 1);
+        expect(perfect['five_perfect'], 1);
 
-      final imperfect = useCase(
-        _completedState(mistakes: 1, hintsUsed: 0),
-        now: DateTime(2026, 1, 1, 12),
-      );
-      expect(imperfect['perfect_game'], isNull);
-      expect(imperfect['five_perfect'], isNull);
-    });
+        final imperfect = useCase(
+          _completedState(mistakes: 1, hintsUsed: 0),
+          now: DateTime(2026, 1, 1, 12),
+        );
+        expect(imperfect['perfect_game'], isNull);
+        expect(imperfect['five_perfect'], isNull);
+      },
+    );
 
     test('credits no-hints achievements only when hintsUsed is 0', () {
       final noHints = useCase(
@@ -173,5 +173,34 @@ void main() {
       expect(noon['night_owl'], isNull);
       expect(noon['early_bird'], isNull);
     });
+
+    test('never returns a plain delta for all_difficulties', () {
+      // Regression check for the bug distinctProgressCredits exists to
+      // avoid: a plain +1 here would let repeated wins on one difficulty
+      // unlock "win on every difficulty".
+      for (final difficulty in Difficulty.values) {
+        final deltas = useCase(
+          _completedState(difficulty: difficulty),
+          now: DateTime(2026, 1, 1, 12),
+        );
+        expect(deltas['all_difficulties'], isNull);
+      }
+    });
+  });
+
+  group('EvaluateAchievementDeltasUseCase.distinctProgressCredits', () {
+    final useCase = EvaluateAchievementDeltasUseCase();
+
+    test(
+      'credits all_difficulties with the completed game\'s difficulty name',
+      () {
+        for (final difficulty in Difficulty.values) {
+          final credits = useCase.distinctProgressCredits(
+            _completedState(difficulty: difficulty),
+          );
+          expect(credits['all_difficulties'], difficulty.name);
+        }
+      },
+    );
   });
 }

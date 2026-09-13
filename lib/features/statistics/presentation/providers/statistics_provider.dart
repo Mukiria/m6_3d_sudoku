@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:m6_sudoku/features/statistics/data/datasources/statistics_local_datasource.dart';
+import 'package:m6_sudoku/features/statistics/data/repositories/statistics_repository_impl.dart';
 import 'package:m6_sudoku/features/statistics/domain/entities/statistics.dart';
 import 'package:m6_sudoku/features/statistics/domain/repositories/statistics_repository.dart';
-import 'package:m6_sudoku/features/statistics/data/repositories/statistics_repository_impl.dart';
-import 'package:m6_sudoku/features/statistics/data/datasources/statistics_local_datasource.dart';
 import 'package:m6_sudoku/features/statistics/domain/usecases/statistics_usecases.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
 
@@ -207,7 +207,7 @@ class StatisticsController extends StateNotifier<AsyncValue<Statistics>> {
   }
 
   Statistics _defaultStats() {
-    return Statistics(
+    return const Statistics(
       gamesPlayed: 0,
       gamesWon: 0,
       currentStreak: 0,

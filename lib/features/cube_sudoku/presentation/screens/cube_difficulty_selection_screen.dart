@@ -54,7 +54,7 @@ class _CubeDifficultySelectionScreenState
         centerTitle: true,
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppConstants.spacingLg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,24 +68,19 @@ class _CubeDifficultySelectionScreenState
                 ),
               ),
               const SizedBox(height: AppConstants.spacingLg),
-              Expanded(
-                child: ListView.separated(
-                  itemCount: CubeFace.values.length,
-                  separatorBuilder:
-                      (_, _) => const SizedBox(height: AppConstants.spacingSm),
-                  itemBuilder: (context, index) {
-                    final face = CubeFace.values[index];
-                    return _FaceSummaryTile(
-                      face: face,
-                      difficulty: _selections[face]!,
-                      onChanged:
-                          (difficulty) =>
-                              _setFaceDifficulty(face, difficulty),
-                    );
-                  },
+              for (final face in CubeFace.values)
+                Padding(
+                  padding: const EdgeInsets.only(
+                    bottom: AppConstants.spacingSm,
+                  ),
+                  child: _FaceSummaryTile(
+                    face: face,
+                    difficulty: _selections[face]!,
+                    onChanged:
+                        (difficulty) => _setFaceDifficulty(face, difficulty),
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppConstants.spacingLg),
+              const SizedBox(height: AppConstants.spacingMd),
               AppButton(
                 onPressed: _start,
                 variant: AppButtonVariant.filled,
@@ -263,8 +258,7 @@ class _HowToPlayCard extends StatelessWidget {
           ),
           const _HowToPlayLine(
             icon: Icons.circle_outlined,
-            text:
-                'Tap a dot above the cube to jump straight to that face.',
+            text: 'Tap a dot above the cube to jump straight to that face.',
           ),
         ],
       ),

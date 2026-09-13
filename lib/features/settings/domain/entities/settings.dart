@@ -1,7 +1,35 @@
-import 'package:flutter/material.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 
 class Settings extends Equatable {
+  factory Settings.fromJson(Map<String, dynamic> json) {
+    return Settings(
+      themeMode: ThemeMode.values.firstWhere(
+        (e) => e.name == json['themeMode'],
+        orElse: () => ThemeMode.light,
+      ),
+      soundEnabled: json['soundEnabled'] ?? true,
+      hapticsEnabled: json['hapticsEnabled'] ?? true,
+      autoNotes: json['autoNotes'] ?? true,
+      highlightErrors: json['highlightErrors'] ?? true,
+      showTimer: json['showTimer'] ?? true,
+      showHints: json['showHints'] ?? true,
+      autoClearNotes: json['autoClearNotes'] ?? true,
+      highlightRegions: json['highlightRegions'] ?? true,
+      numberFirstInput: json['numberFirstInput'] ?? false,
+      selectedDifficulty: json['selectedDifficulty'] ?? 'easy',
+      maxHints: json['maxHints'] ?? 3,
+      maxUndoHistory: json['maxUndoHistory'] ?? 50,
+      maxPuzzleHistory: json['maxPuzzleHistory'] ?? 100,
+      autoSave: json['autoSave'] ?? true,
+      showMistakes: json['showMistakes'] ?? true,
+      autoNotesEnabled: json['autoNotesEnabled'] ?? true,
+      hapticFeedbackEnabled: json['hapticFeedbackEnabled'] ?? true,
+      soundEffectsEnabled: json['soundEffectsEnabled'] ?? true,
+      autoSaveEnabled: json['autoSaveEnabled'] ?? true,
+      animationsEnabled: json['animationsEnabled'] ?? true,
+    );
+  }
   const Settings({
     this.themeMode = ThemeMode.light,
     this.soundEnabled = true,
@@ -121,35 +149,6 @@ class Settings extends Equatable {
       'autoSaveEnabled': autoSaveEnabled,
       'animationsEnabled': animationsEnabled,
     };
-  }
-
-  factory Settings.fromJson(Map<String, dynamic> json) {
-    return Settings(
-      themeMode: ThemeMode.values.firstWhere(
-        (e) => e.name == json['themeMode'],
-        orElse: () => ThemeMode.light,
-      ),
-      soundEnabled: json['soundEnabled'] ?? true,
-      hapticsEnabled: json['hapticsEnabled'] ?? true,
-      autoNotes: json['autoNotes'] ?? true,
-      highlightErrors: json['highlightErrors'] ?? true,
-      showTimer: json['showTimer'] ?? true,
-      showHints: json['showHints'] ?? true,
-      autoClearNotes: json['autoClearNotes'] ?? true,
-      highlightRegions: json['highlightRegions'] ?? true,
-      numberFirstInput: json['numberFirstInput'] ?? false,
-      selectedDifficulty: json['selectedDifficulty'] ?? 'easy',
-      maxHints: json['maxHints'] ?? 3,
-      maxUndoHistory: json['maxUndoHistory'] ?? 50,
-      maxPuzzleHistory: json['maxPuzzleHistory'] ?? 100,
-      autoSave: json['autoSave'] ?? true,
-      showMistakes: json['showMistakes'] ?? true,
-      autoNotesEnabled: json['autoNotesEnabled'] ?? true,
-      hapticFeedbackEnabled: json['hapticFeedbackEnabled'] ?? true,
-      soundEffectsEnabled: json['soundEffectsEnabled'] ?? true,
-      autoSaveEnabled: json['autoSaveEnabled'] ?? true,
-      animationsEnabled: json['animationsEnabled'] ?? true,
-    );
   }
 
   @override

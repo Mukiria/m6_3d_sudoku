@@ -7,12 +7,6 @@ part 'game_state.g.dart';
 
 @freezed
 class GameState with _$GameState {
-  /// Bumped whenever the persisted shape of [GameState] changes in a way
-  /// that's not safely backward-compatible. [PuzzleLocalDataSource] discards
-  /// any saved game whose `saveVersion` doesn't match this, rather than risk
-  /// deserializing it into a broken state.
-  static const int currentSaveVersion = 1;
-
   const factory GameState({
     required String puzzleId,
     required Puzzle puzzle,
@@ -39,6 +33,12 @@ class GameState with _$GameState {
 
   factory GameState.fromJson(Map<String, dynamic> json) =>
       _$GameStateFromJson(json);
+
+  /// Bumped whenever the persisted shape of [GameState] changes in a way
+  /// that's not safely backward-compatible. [PuzzleLocalDataSource] discards
+  /// any saved game whose `saveVersion` doesn't match this, rather than risk
+  /// deserializing it into a broken state.
+  static const int currentSaveVersion = 1;
 }
 
 @freezed

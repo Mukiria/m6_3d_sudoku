@@ -1,9 +1,9 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
+import 'package:m6_sudoku/core/errors/failures.dart';
 import 'package:m6_sudoku/core/services/json_store.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';
-import 'package:m6_sudoku/core/errors/failures.dart';
-import '../../domain/entities/settings.dart';
+import 'package:m6_sudoku/features/settings/domain/entities/settings.dart';
 
 class SettingsLocalDataSource {
   SettingsLocalDataSource(StorageService storage) : _json = JsonStore(storage);
@@ -30,7 +30,7 @@ class SettingsLocalDataSource {
   }
 
   Settings _defaultSettings() {
-    return Settings(
+    return const Settings(
       themeMode: ThemeMode.light,
       soundEnabled: true,
       hapticsEnabled: true,

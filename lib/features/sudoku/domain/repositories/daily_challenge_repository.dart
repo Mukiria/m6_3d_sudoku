@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/daily_challenge.dart';
 import 'package:m6_sudoku/core/errors/failures.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/daily_challenge.dart';
 
 abstract class DailyChallengeRepository {
   Future<Either<Failure, DailyChallenge>> getOrGenerateDailyChallenge();

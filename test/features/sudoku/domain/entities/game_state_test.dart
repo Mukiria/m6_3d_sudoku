@@ -5,7 +5,7 @@ import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 
 final testHint = HintState(
   type: HintType.directReveal,
-  cell: CellPosition(row: 0, col: 0),
+  cell: const CellPosition(row: 0, col: 0),
   value: 1,
   explanation: 'test hint',
   shownAt: DateTime(2024, 1, 1),
@@ -100,11 +100,11 @@ void main() {
         status: GameStatus.playing,
         lastPlayed: DateTime.now(),
         difficulty: Difficulty.easy,
-        selectedCell: CellPosition(row: 0, col: 0),
+        selectedCell: const CellPosition(row: 0, col: 0),
         selectedNumber: 5,
         isNoteMode: true,
-        highlightedCells: {CellPosition(row: 0, col: 1)},
-        conflictCells: {CellPosition(row: 1, col: 1)},
+        highlightedCells: {const CellPosition(row: 0, col: 1)},
+        conflictCells: {const CellPosition(row: 1, col: 1)},
         hintState: testHint,
         lastSaved: DateTime.now(),
       );
@@ -147,11 +147,11 @@ void main() {
         status: GameStatus.paused,
         lastPlayed: DateTime(2024, 6, 15),
         difficulty: Difficulty.hard,
-        selectedCell: CellPosition(row: 4, col: 4),
+        selectedCell: const CellPosition(row: 4, col: 4),
         selectedNumber: 7,
         isNoteMode: false,
-        highlightedCells: {CellPosition(row: 0, col: 0)},
-        conflictCells: {CellPosition(row: 1, col: 1)},
+        highlightedCells: {const CellPosition(row: 0, col: 0)},
+        conflictCells: {const CellPosition(row: 1, col: 1)},
         hintState: testHint,
         lastSaved: DateTime(2024, 6, 15),
       );

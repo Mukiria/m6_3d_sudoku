@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
+import 'package:m6_sudoku/shared/widgets/glass/glass_button_surface.dart';
 
 class AppButton extends StatelessWidget {
   const AppButton({
@@ -18,6 +19,7 @@ class AppButton extends StatelessWidget {
     this.padding,
     this.backgroundColor,
     this.foregroundColor,
+    this.glassTint,
   });
 
   final VoidCallback? onPressed;
@@ -32,8 +34,16 @@ class AppButton extends StatelessWidget {
   final double? height;
   final double? borderRadius;
   final EdgeInsetsGeometry? padding;
+
+  /// A solid fill, ignoring glass entirely — for a button that must read
+  /// as fully opaque regardless of what's behind it.
   final Color? backgroundColor;
   final Color? foregroundColor;
+
+  /// An accent-tinted glass fill (its own alpha included) — for a primary
+  /// CTA that should still read as "the brand-colored button" while
+  /// remaining glass. Ignored if [backgroundColor] is also set.
+  final Color? glassTint;
 
   @override
   Widget build(BuildContext context) {
@@ -71,35 +81,49 @@ class AppButton extends StatelessWidget {
 
     switch (variant) {
       case AppButtonVariant.filled:
+        final filledButton = FilledButton(
+          onPressed: effectiveOnPressed,
+          style: FilledButton.styleFrom(
+            padding: buttonPadding,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(buttonBorderRadius),
+            ),
+            textStyle: textStyle,
+            minimumSize: Size(width ?? 0, buttonHeight),
+          ).copyWith(
+            backgroundColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.disabled)) {
+                return colorScheme.onSurface.withValues(alpha: 0.12);
+              }
+              // backgroundColor forces a fully solid fill. Otherwise,
+              // transparent lets the GlassSurface wrapping this button
+              // (below) show through — tinted if glassTint was given,
+              // neutral glass otherwise.
+              return backgroundColor ?? Colors.transparent;
+            }),
+            foregroundColor:
+                foregroundColor != null
+                    ? WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.disabled)) return null;
+                      return foregroundColor;
+                    })
+                    : null,
+          ),
+          child: buttonChild,
+        );
+
         return SizedBox(
           width: width,
           height: buttonHeight,
-          child: FilledButton(
-            onPressed: effectiveOnPressed,
-            style: FilledButton.styleFrom(
-              padding: buttonPadding,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(buttonBorderRadius),
-              ),
-              textStyle: textStyle,
-              minimumSize: Size(width ?? 0, buttonHeight),
-            ).copyWith(
-              backgroundColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.disabled)) {
-                  return colorScheme.onSurface.withValues(alpha: 0.12);
-                }
-                return backgroundColor;
-              }),
-              foregroundColor:
-                  foregroundColor != null
-                      ? WidgetStateProperty.resolveWith((states) {
-                        if (states.contains(WidgetState.disabled)) return null;
-                        return foregroundColor;
-                      })
-                      : null,
-            ),
-            child: buttonChild,
-          ),
+          child:
+              backgroundColor != null
+                  ? filledButton
+                  : GlassButtonSurface(
+                    enabled: effectiveOnPressed != null,
+                    borderRadius: buttonBorderRadius,
+                    tintColor: glassTint,
+                    child: filledButton,
+                  ),
         );
       case AppButtonVariant.outlined:
         return SizedBox(
@@ -164,20 +188,35 @@ class AppButton extends StatelessWidget {
           ),
         );
       case AppButtonVariant.tonal:
+        final tonalButton = FilledButton.tonal(
+          onPressed: effectiveOnPressed,
+          style: FilledButton.styleFrom(
+            padding: buttonPadding,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(buttonBorderRadius),
+            ),
+            textStyle: textStyle,
+            minimumSize: Size(width ?? 0, buttonHeight),
+          ).copyWith(
+            backgroundColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.disabled)) {
+                return colorScheme.onSurface.withValues(alpha: 0.12);
+              }
+              return Colors.transparent;
+            }),
+          ),
+          child: buttonChild,
+        );
+
         return SizedBox(
           width: width,
           height: buttonHeight,
-          child: FilledButton.tonal(
-            onPressed: effectiveOnPressed,
-            style: FilledButton.styleFrom(
-              padding: buttonPadding,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(buttonBorderRadius),
-              ),
-              textStyle: textStyle,
-              minimumSize: Size(width ?? 0, buttonHeight),
-            ),
-            child: buttonChild,
+          child: GlassButtonSurface(
+            enabled: effectiveOnPressed != null,
+            borderRadius: buttonBorderRadius,
+            elevatedShadow: false,
+            tintColor: glassTint,
+            child: tonalButton,
           ),
         );
     }
@@ -187,7 +226,7 @@ class AppButton extends StatelessWidget {
     if (icon == null) return DefaultTextStyle(style: textStyle, child: child);
 
     final iconSize = _getIconSize(size);
-    final spacing = 8.0;
+    const spacing = 8.0;
 
     return DefaultTextStyle(
       style: textStyle,
@@ -200,11 +239,11 @@ class AppButton extends StatelessWidget {
               data: IconThemeData(size: iconSize, color: textStyle.color),
               child: icon!,
             ),
-            SizedBox(width: spacing),
+            const SizedBox(width: spacing),
           ],
           Flexible(child: child),
           if (iconPosition == IconPosition.end) ...[
-            SizedBox(width: spacing),
+            const SizedBox(width: spacing),
             IconTheme(
               data: IconThemeData(size: iconSize, color: textStyle.color),
               child: icon!,

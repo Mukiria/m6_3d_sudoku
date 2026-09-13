@@ -1,6 +1,7 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show compute;
+
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:m6_sudoku/core/errors/failures.dart';
 import 'package:m6_sudoku/core/services/json_store.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';

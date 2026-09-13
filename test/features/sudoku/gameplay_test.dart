@@ -1,59 +1,58 @@
 import 'package:dartz/dartz.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:m6_sudoku/core/errors/failures.dart';
-import 'package:m6_sudoku/core/services/storage_service.dart';
-import 'package:m6_sudoku/features/settings/domain/repositories/settings_repository.dart';
-import 'package:m6_sudoku/features/sudoku/domain/usecases/game_usecases.dart';
-import 'package:m6_sudoku/features/sudoku/domain/repositories/puzzle_repository.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
+import 'package:m6_sudoku/features/settings/presentation/providers/settings_provider.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
+import 'package:m6_sudoku/features/sudoku/domain/repositories/puzzle_repository.dart';
+import 'package:m6_sudoku/features/sudoku/domain/usecases/game_usecases.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/game_provider.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
-import 'package:m6_sudoku/features/settings/presentation/providers/settings_provider.dart';
+
 import '../../fakes/fake_services.dart';
 
 class FakePuzzleRepository implements PuzzleRepository {
   @override
   Future<Either<Failure, Puzzle>> generatePuzzle(String difficulty) async =>
-      Left(CacheFailure('Not implemented'));
+      const Left(CacheFailure('Not implemented'));
 
   @override
   Future<Either<Failure, Puzzle>> getPuzzle(String id) async =>
-      Left(CacheFailure('Not implemented'));
+      const Left(CacheFailure('Not implemented'));
 
   @override
   Future<Either<Failure, void>> savePuzzle(Puzzle puzzle) async =>
-      Left(CacheFailure('Not implemented'));
+      const Left(CacheFailure('Not implemented'));
 
   @override
   Future<Either<Failure, void>> deletePuzzle(String id) async =>
-      Left(CacheFailure('Not implemented'));
+      const Left(CacheFailure('Not implemented'));
 
   @override
   Future<Either<Failure, Puzzle?>> getCurrentPuzzle() async =>
-      Left(CacheFailure('Not implemented'));
+      const Left(CacheFailure('Not implemented'));
 
   @override
   Future<Either<Failure, void>> saveGameState(GameState state) async =>
-      Left(CacheFailure('Not implemented'));
+      const Left(CacheFailure('Not implemented'));
 
   @override
   Future<Either<Failure, GameState?>> getGameState() async =>
-      Left(CacheFailure('Not implemented'));
+      const Left(CacheFailure('Not implemented'));
 
   @override
   Future<Either<Failure, void>> clearGameState() async =>
-      Left(CacheFailure('Not implemented'));
+      const Left(CacheFailure('Not implemented'));
 
   @override
   Future<Either<Failure, List<Puzzle>>> getPuzzleHistory() async =>
-      Left(CacheFailure('Not implemented'));
+      const Left(CacheFailure('Not implemented'));
 
   @override
   Future<Either<Failure, void>> savePuzzleToHistory(Puzzle puzzle) async =>
-      Left(CacheFailure('Not implemented'));
+      const Left(CacheFailure('Not implemented'));
 }
 
 class FakeGetHintUseCase extends GetHintUseCase {
@@ -190,13 +189,13 @@ void main() {
         }
 
         if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
+          controller.selectCell(emptyRow, emptyCol!);
 
           final newState = container.read(gameControllerProvider);
 
           expect(
             newState!.selectedCell,
-            CellPosition(row: emptyRow!, col: emptyCol!),
+            CellPosition(row: emptyRow, col: emptyCol),
           );
           expect(
             newState.highlightedCells.length,
@@ -226,7 +225,7 @@ void main() {
         }
 
         if (fixedRow != null) {
-          controller.selectCell(fixedRow!, fixedCol!);
+          controller.selectCell(fixedRow, fixedCol!);
           final state = container.read(gameControllerProvider);
           // Should not select fixed cell
           expect(state!.selectedCell, isNull);
@@ -254,11 +253,11 @@ void main() {
         }
 
         if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
-          controller.setValue(emptyRow!, emptyCol!, 5);
+          controller.selectCell(emptyRow, emptyCol!);
+          controller.setValue(emptyRow, emptyCol, 5);
 
           final newState = container.read(gameControllerProvider);
-          expect(newState!.userGrid[emptyRow!][emptyCol!], 5);
+          expect(newState!.userGrid[emptyRow][emptyCol], 5);
         }
       });
 
@@ -282,10 +281,10 @@ void main() {
         }
 
         if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
+          controller.selectCell(emptyRow, emptyCol!);
           // Use wrong value
           final wrongValue = correctValue == 9 ? 1 : correctValue + 1;
-          controller.setValue(emptyRow!, emptyCol!, wrongValue);
+          controller.setValue(emptyRow, emptyCol, wrongValue);
 
           final newState = container.read(gameControllerProvider);
           expect(newState!.mistakes, 1);
@@ -312,8 +311,8 @@ void main() {
         }
 
         if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
-          controller.setValue(emptyRow!, emptyCol!, correctValue);
+          controller.selectCell(emptyRow, emptyCol!);
+          controller.setValue(emptyRow, emptyCol, correctValue);
 
           final newState = container.read(gameControllerProvider);
           expect(newState!.mistakes, 0);
@@ -338,12 +337,12 @@ void main() {
         }
 
         if (fixedRow != null) {
-          final originalValue = state!.userGrid[fixedRow!][fixedCol!];
-          controller.selectCell(fixedRow!, fixedCol!);
-          controller.setValue(fixedRow!, fixedCol!, 9);
+          final originalValue = state!.userGrid[fixedRow][fixedCol!];
+          controller.selectCell(fixedRow, fixedCol);
+          controller.setValue(fixedRow, fixedCol, 9);
 
           final newState = container.read(gameControllerProvider);
-          expect(newState!.userGrid[fixedRow!][fixedCol!], originalValue);
+          expect(newState!.userGrid[fixedRow][fixedCol], originalValue);
         }
       });
 
@@ -367,11 +366,11 @@ void main() {
         }
 
         if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
-          controller.setValue(emptyRow!, emptyCol!, correctValue);
+          controller.selectCell(emptyRow, emptyCol!);
+          controller.setValue(emptyRow, emptyCol, correctValue);
 
           final stateAfterFirst = container.read(gameControllerProvider);
-          controller.setValue(emptyRow!, emptyCol!, correctValue);
+          controller.setValue(emptyRow, emptyCol, correctValue);
 
           final stateAfterSecond = container.read(gameControllerProvider);
           // Should not add duplicate move
@@ -402,10 +401,10 @@ void main() {
         }
 
         if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
+          controller.selectCell(emptyRow, emptyCol!);
 
           // Find a note value that's NOT in the initial candidates for this cell
-          final initialNotes = state!.notes[emptyRow!][emptyCol!];
+          final initialNotes = state!.notes[emptyRow][emptyCol];
           int noteToAdd = 1;
           while (initialNotes.contains(noteToAdd) && noteToAdd <= 9) {
             noteToAdd++;
@@ -413,10 +412,10 @@ void main() {
           // If all 1-9 are candidates (unlikely), use 1 anyway - test will still verify toggle behavior
           if (noteToAdd > 9) noteToAdd = 1;
 
-          controller.toggleNote(emptyRow!, emptyCol!, noteToAdd);
+          controller.toggleNote(emptyRow, emptyCol, noteToAdd);
 
           final newState = container.read(gameControllerProvider);
-          expect(newState!.notes[emptyRow!][emptyCol!], contains(noteToAdd));
+          expect(newState!.notes[emptyRow][emptyCol], contains(noteToAdd));
         }
       });
 
@@ -438,10 +437,10 @@ void main() {
         }
 
         if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
+          controller.selectCell(emptyRow, emptyCol!);
 
           // Find a note value that's NOT in the initial candidates for this cell
-          final initialNotes = state!.notes[emptyRow!][emptyCol!];
+          final initialNotes = state!.notes[emptyRow][emptyCol];
           int noteToAdd = 1;
           while (initialNotes.contains(noteToAdd) && noteToAdd <= 9) {
             noteToAdd++;
@@ -449,13 +448,13 @@ void main() {
           if (noteToAdd > 9) noteToAdd = 1;
 
           // First toggle adds the note
-          controller.toggleNote(emptyRow!, emptyCol!, noteToAdd);
+          controller.toggleNote(emptyRow, emptyCol, noteToAdd);
           // Second toggle removes it
-          controller.toggleNote(emptyRow!, emptyCol!, noteToAdd);
+          controller.toggleNote(emptyRow, emptyCol, noteToAdd);
 
           final newState = container.read(gameControllerProvider);
           expect(
-            newState!.notes[emptyRow!][emptyCol!],
+            newState!.notes[emptyRow][emptyCol],
             isNot(contains(noteToAdd)),
           );
         }
@@ -479,11 +478,11 @@ void main() {
         }
 
         if (fixedRow != null) {
-          controller.selectCell(fixedRow!, fixedCol!);
-          controller.toggleNote(fixedRow!, fixedCol!, 5);
+          controller.selectCell(fixedRow, fixedCol!);
+          controller.toggleNote(fixedRow, fixedCol, 5);
 
           final newState = container.read(gameControllerProvider);
-          expect(newState!.notes[fixedRow!][fixedCol!], isEmpty);
+          expect(newState!.notes[fixedRow][fixedCol], isEmpty);
         }
       });
     });
@@ -509,13 +508,13 @@ void main() {
         }
 
         if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
-          controller.setValue(emptyRow!, emptyCol!, correctValue);
+          controller.selectCell(emptyRow, emptyCol!);
+          controller.setValue(emptyRow, emptyCol, correctValue);
 
-          controller.clearCell(emptyRow!, emptyCol!);
+          controller.clearCell(emptyRow, emptyCol);
 
           final newState = container.read(gameControllerProvider);
-          expect(newState!.userGrid[emptyRow!][emptyCol!], 0);
+          expect(newState!.userGrid[emptyRow][emptyCol], 0);
         }
       });
 
@@ -537,12 +536,12 @@ void main() {
         }
 
         if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
-          controller.toggleNote(emptyRow!, emptyCol!, 5);
-          controller.clearCell(emptyRow!, emptyCol!);
+          controller.selectCell(emptyRow, emptyCol!);
+          controller.toggleNote(emptyRow, emptyCol, 5);
+          controller.clearCell(emptyRow, emptyCol);
 
           final newState = container.read(gameControllerProvider);
-          expect(newState!.notes[emptyRow!][emptyCol!], isEmpty);
+          expect(newState!.notes[emptyRow][emptyCol], isEmpty);
         }
       });
 
@@ -564,11 +563,11 @@ void main() {
         }
 
         if (fixedRow != null) {
-          final originalValue = state!.userGrid[fixedRow!][fixedCol!];
-          controller.clearCell(fixedRow!, fixedCol!);
+          final originalValue = state!.userGrid[fixedRow][fixedCol!];
+          controller.clearCell(fixedRow, fixedCol);
 
           final newState = container.read(gameControllerProvider);
-          expect(newState!.userGrid[fixedRow!][fixedCol!], originalValue);
+          expect(newState!.userGrid[fixedRow][fixedCol], originalValue);
         }
       });
     });
@@ -594,14 +593,14 @@ void main() {
         }
 
         if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
-          controller.setValue(emptyRow!, emptyCol!, correctValue);
+          controller.selectCell(emptyRow, emptyCol!);
+          controller.setValue(emptyRow, emptyCol, correctValue);
 
           final stateAfterMove = container.read(gameControllerProvider);
           controller.undo();
 
           final stateAfterUndo = container.read(gameControllerProvider);
-          expect(stateAfterUndo!.userGrid[emptyRow!][emptyCol!], 0);
+          expect(stateAfterUndo!.userGrid[emptyRow][emptyCol], 0);
           expect(stateAfterUndo.moveHistory.length, state!.moveHistory.length);
         }
       });
@@ -626,54 +625,57 @@ void main() {
         }
 
         if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
-          controller.setValue(emptyRow!, emptyCol!, correctValue);
+          controller.selectCell(emptyRow, emptyCol!);
+          controller.setValue(emptyRow, emptyCol, correctValue);
           controller.undo();
           controller.redo();
 
           final stateAfterRedo = container.read(gameControllerProvider);
-          expect(stateAfterRedo!.userGrid[emptyRow!][emptyCol!], correctValue);
+          expect(stateAfterRedo!.userGrid[emptyRow][emptyCol], correctValue);
         }
       });
 
-      test('redo reapplies an undone clear (not the pre-clear value)', () async {
-        final controller = container.read(gameControllerProvider.notifier);
-        await controller.newGame(Difficulty.easy);
+      test(
+        'redo reapplies an undone clear (not the pre-clear value)',
+        () async {
+          final controller = container.read(gameControllerProvider.notifier);
+          await controller.newGame(Difficulty.easy);
 
-        final state = container.read(gameControllerProvider);
-        int? emptyRow, emptyCol;
-        int correctValue = 0;
-        for (int r = 0; r < 9; r++) {
-          for (int c = 0; c < 9; c++) {
-            if (state!.userGrid[r][c] == 0 && state.puzzle.grid[r][c] == 0) {
-              emptyRow = r;
-              emptyCol = c;
-              correctValue = state.puzzle.solution[r][c];
-              break;
+          final state = container.read(gameControllerProvider);
+          int? emptyRow, emptyCol;
+          int correctValue = 0;
+          for (int r = 0; r < 9; r++) {
+            for (int c = 0; c < 9; c++) {
+              if (state!.userGrid[r][c] == 0 && state.puzzle.grid[r][c] == 0) {
+                emptyRow = r;
+                emptyCol = c;
+                correctValue = state.puzzle.solution[r][c];
+                break;
+              }
             }
+            if (emptyRow != null) break;
           }
-          if (emptyRow != null) break;
-        }
 
-        if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
-          controller.setValue(emptyRow!, emptyCol!, correctValue);
-          controller.clearCell(emptyRow!, emptyCol!);
+          if (emptyRow != null) {
+            controller.selectCell(emptyRow, emptyCol!);
+            controller.setValue(emptyRow, emptyCol, correctValue);
+            controller.clearCell(emptyRow, emptyCol);
 
-          final stateAfterClear = container.read(gameControllerProvider);
-          expect(stateAfterClear!.userGrid[emptyRow!][emptyCol!], 0);
+            final stateAfterClear = container.read(gameControllerProvider);
+            expect(stateAfterClear!.userGrid[emptyRow][emptyCol], 0);
 
-          controller.undo();
-          final stateAfterUndo = container.read(gameControllerProvider);
-          expect(stateAfterUndo!.userGrid[emptyRow!][emptyCol!], correctValue);
+            controller.undo();
+            final stateAfterUndo = container.read(gameControllerProvider);
+            expect(stateAfterUndo!.userGrid[emptyRow][emptyCol], correctValue);
 
-          controller.redo();
-          final stateAfterRedo = container.read(gameControllerProvider);
-          // Regression check: redoing a clear must re-clear the cell (0),
-          // not silently restore the pre-clear value again.
-          expect(stateAfterRedo!.userGrid[emptyRow!][emptyCol!], 0);
-        }
-      });
+            controller.redo();
+            final stateAfterRedo = container.read(gameControllerProvider);
+            // Regression check: redoing a clear must re-clear the cell (0),
+            // not silently restore the pre-clear value again.
+            expect(stateAfterRedo!.userGrid[emptyRow][emptyCol], 0);
+          }
+        },
+      );
 
       test('undo clears redo stack on new move', () async {
         final controller = container.read(gameControllerProvider.notifier);
@@ -695,12 +697,12 @@ void main() {
         }
 
         if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
-          controller.setValue(emptyRow!, emptyCol!, correctValue);
+          controller.selectCell(emptyRow, emptyCol!);
+          controller.setValue(emptyRow, emptyCol, correctValue);
           controller.undo();
 
           // Make a new move
-          controller.setValue(emptyRow!, emptyCol!, correctValue);
+          controller.setValue(emptyRow, emptyCol, correctValue);
 
           final newState = container.read(gameControllerProvider);
           expect(newState!.redoStack, isEmpty);
@@ -727,13 +729,13 @@ void main() {
         }
 
         if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
-          controller.setValue(emptyRow!, emptyCol!, correctValue);
+          controller.selectCell(emptyRow, emptyCol!);
+          controller.setValue(emptyRow, emptyCol, correctValue);
           controller.undo();
 
           // A stale redo entry exists here; clearing a (different) cell
           // should still invalidate it, the same way a new setValue does.
-          controller.clearCell(emptyRow!, emptyCol!);
+          controller.clearCell(emptyRow, emptyCol);
 
           final newState = container.read(gameControllerProvider);
           expect(newState!.redoStack, isEmpty);
@@ -753,8 +755,8 @@ void main() {
 
         final newState = container.read(gameControllerProvider);
         expect(newState!.hintsUsed, 1);
-        expect(newState!.penaltyTime, greaterThan(0));
-        expect(newState!.timeElapsed, greaterThan(timeBefore));
+        expect(newState.penaltyTime, greaterThan(0));
+        expect(newState.timeElapsed, greaterThan(timeBefore));
       });
 
       test('adds correct penalty for direct reveal', () async {
@@ -790,6 +792,57 @@ void main() {
         final state = container.read(gameControllerProvider);
         expect(state!.status, GameStatus.playing);
       });
+
+      test(
+        'resume persists the playing status, not just pause — a cold restart right after resuming must not see a stuck paused session',
+        () async {
+          final storage = FakeStorageService();
+
+          final containerA = ProviderContainer(
+            overrides: [
+              storageServiceProvider.overrideWithValue(storage),
+              settingsRepositoryProvider.overrideWithValue(
+                FakeSettingsRepository(),
+              ),
+              audioServiceProvider.overrideWithValue(FakeAudioService()),
+              getHintUseCaseProvider.overrideWithValue(FakeGetHintUseCase()),
+            ],
+          );
+          addTearDown(containerA.dispose);
+          containerA.listen(gameControllerProvider, (_, _) {});
+
+          final controllerA = containerA.read(gameControllerProvider.notifier);
+          await controllerA.newGame(Difficulty.easy);
+
+          controllerA.pause();
+          controllerA.resume();
+
+          // A fresh container over the same storage simulates the app being
+          // killed the instant after resuming, before any further move —
+          // loadGame()/_startSession() only treat a saved
+          // GameStatus.playing session as resumable, so if resume() didn't
+          // persist, this restart would see GameStatus.paused and silently
+          // discard the session instead of restoring it.
+          final containerB = ProviderContainer(
+            overrides: [
+              storageServiceProvider.overrideWithValue(storage),
+              settingsRepositoryProvider.overrideWithValue(
+                FakeSettingsRepository(),
+              ),
+              audioServiceProvider.overrideWithValue(FakeAudioService()),
+              getHintUseCaseProvider.overrideWithValue(FakeGetHintUseCase()),
+            ],
+          );
+          addTearDown(containerB.dispose);
+          containerB.listen(gameControllerProvider, (_, _) {});
+
+          await containerB.read(gameControllerProvider.notifier).loadGame();
+
+          final restored = containerB.read(gameControllerProvider);
+          expect(restored, isNotNull);
+          expect(restored!.status, GameStatus.playing);
+        },
+      );
     });
 
     group('game completion', () {
@@ -834,19 +887,19 @@ void main() {
         }
 
         if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
+          controller.selectCell(emptyRow, emptyCol!);
 
           // Make 3 mistakes
           for (int i = 1; i <= 3; i++) {
             final wrongValue = (correctValue + i) % 9 + 1;
             if (wrongValue != correctValue) {
-              controller.setValue(emptyRow!, emptyCol!, wrongValue);
+              controller.setValue(emptyRow, emptyCol, wrongValue);
             }
           }
 
           final finalState = container.read(gameControllerProvider);
           expect(finalState!.status, GameStatus.failed);
-          expect(finalState!.mistakes, 3);
+          expect(finalState.mistakes, 3);
         }
       });
     });
@@ -885,8 +938,8 @@ void main() {
         }
 
         if (emptyRow != null) {
-          controller.selectCell(emptyRow!, emptyCol!);
-          controller.setValue(emptyRow!, emptyCol!, correctValue);
+          controller.selectCell(emptyRow, emptyCol!);
+          controller.setValue(emptyRow, emptyCol, correctValue);
 
           final stateAfterMove = container.read(gameControllerProvider);
 
@@ -894,9 +947,9 @@ void main() {
           await controller.continueGame(stateAfterMove!);
 
           final continuedState = container.read(gameControllerProvider);
-          expect(continuedState!.userGrid[emptyRow!][emptyCol!], correctValue);
-          expect(continuedState.timeElapsed, stateAfterMove!.timeElapsed);
-          expect(continuedState.mistakes, stateAfterMove!.mistakes);
+          expect(continuedState!.userGrid[emptyRow][emptyCol], correctValue);
+          expect(continuedState.timeElapsed, stateAfterMove.timeElapsed);
+          expect(continuedState.mistakes, stateAfterMove.mistakes);
         }
       });
     });

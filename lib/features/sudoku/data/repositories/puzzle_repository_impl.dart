@@ -1,9 +1,9 @@
 import 'package:dartz/dartz.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
-import 'package:m6_sudoku/features/sudoku/domain/repositories/puzzle_repository.dart';
-import 'package:m6_sudoku/features/sudoku/data/datasources/puzzle_local_datasource.dart';
 import 'package:m6_sudoku/core/errors/failures.dart';
+import 'package:m6_sudoku/features/sudoku/data/datasources/puzzle_local_datasource.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
+import 'package:m6_sudoku/features/sudoku/domain/repositories/puzzle_repository.dart';
 
 class PuzzleRepositoryImpl implements PuzzleRepository {
   PuzzleRepositoryImpl(this._dataSource);
@@ -23,7 +23,7 @@ class PuzzleRepositoryImpl implements PuzzleRepository {
         (puzzle) =>
             puzzle != null
                 ? Right(puzzle)
-                : Left(NotFoundFailure('Puzzle not found')),
+                : const Left(NotFoundFailure('Puzzle not found')),
       ),
     );
   }

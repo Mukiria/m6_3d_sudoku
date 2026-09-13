@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/core/routing/app_router.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';
 import 'package:m6_sudoku/core/theme/app_theme.dart';
-import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
 import 'package:m6_sudoku/features/cube_sudoku/presentation/providers/cube_game_provider.dart';
 import 'package:m6_sudoku/features/settings/presentation/providers/settings_provider.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/game_provider.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,11 +33,47 @@ void main() async {
   );
 }
 
-class M6SudokuApp extends ConsumerWidget {
+class M6SudokuApp extends ConsumerStatefulWidget {
   const M6SudokuApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<M6SudokuApp> createState() => _M6SudokuAppState();
+}
+
+class _M6SudokuAppState extends ConsumerState<M6SudokuApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Per-move autosave (plus a 30s backup timer) covers normal play, but
+  // neither fires on its own when the app is backgrounded or the process is
+  // killed — so without this, up to ~30s of ticked timeElapsed could be
+  // lost between the last real move and the app going away. `paused` and
+  // `hidden` cover backgrounding (task-switch, screen lock); `detached`
+  // covers the tail end of an actual close. Flushing on all three is what
+  // makes "Continue Game"/"Continue 3D Sudoku" reliably reflect the exact
+  // moment the player left, not just the moment of their last tap.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      ref.read(gameControllerProvider.notifier).saveNow();
+      ref.read(cubeGameControllerProvider.notifier).saveNow();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(goRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
 
@@ -48,12 +83,16 @@ class M6SudokuApp extends ConsumerWidget {
     return MaterialApp.router(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme.copyWith(
-        extensions: [AppThemeExtension.light],
-      ),
-      darkTheme: AppTheme.darkTheme.copyWith(
-        extensions: [AppThemeExtension.dark],
-      ),
+      // AppTheme.lightTheme/darkTheme already register every extension
+      // (AppThemeExtension, GlassTokens) themselves — no .copyWith needed
+      // here. A prior .copyWith(extensions: [AppThemeExtension.light])
+      // used to re-assert just that one extension, which silently
+      // *replaced* the whole list and dropped GlassTokens from the active
+      // theme (GlassTokens.of falls back to its own light default either
+      // way, which is exactly how that went unnoticed in light mode and
+      // only broke visibly once dark mode was actually tested).
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       routerConfig: router,
       builder: (context, child) {

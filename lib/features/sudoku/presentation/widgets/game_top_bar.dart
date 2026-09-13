@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/core/routing/app_router.dart';
 import 'package:m6_sudoku/features/settings/presentation/providers/settings_provider.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/game_provider.dart';
 
-/// The row of circular icon buttons above the stat card: back, quick theme
-/// cycle, statistics, and settings. Statistics/Settings pause the game
-/// timer for the trip and resume it on return.
+/// The row of icon buttons at the top of the merged glass dock (see
+/// [GameHeader] and the `GlassSurface` wrapping both in `GameScreen`): back,
+/// quick theme cycle, statistics, and settings. Statistics/Settings pause
+/// the game timer for the trip and resume it on return.
+///
+/// These render as plain icons on the dock's own glass, not individual
+/// circular cards — the whole row is already one floating glass surface,
+/// so a second layer of per-icon "chips" would just be redundant chrome.
 class GameTopBar extends ConsumerWidget {
   const GameTopBar({super.key, required this.onBack});
 
@@ -16,40 +20,36 @@ class GameTopBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppConstants.spacingMd,
-        AppConstants.spacingSm,
-        AppConstants.spacingMd,
-        0,
-      ),
-      child: Row(
-        children: [
-          _CircleIconButton(
-            icon: Icons.arrow_back_rounded,
-            tooltip: 'Back',
-            onTap: onBack,
-          ),
-          const Spacer(),
-          _CircleIconButton(
-            icon: Icons.palette_outlined,
-            tooltip: 'Theme',
-            onTap: () => _cycleTheme(context, ref),
-          ),
-          const SizedBox(width: AppConstants.spacingSm),
-          _CircleIconButton(
-            icon: Icons.leaderboard_rounded,
-            tooltip: 'Statistics',
-            onTap: () => _visit(context, ref, AppRoutes.statistics),
-          ),
-          const SizedBox(width: AppConstants.spacingSm),
-          _CircleIconButton(
-            icon: Icons.settings_rounded,
-            tooltip: 'Settings',
-            onTap: () => _visit(context, ref, AppRoutes.settings),
-          ),
-        ],
-      ),
+    final color = Theme.of(context).colorScheme.onSurfaceVariant;
+
+    return Row(
+      children: [
+        _DockIconButton(
+          icon: Icons.arrow_back_rounded,
+          tooltip: 'Back',
+          color: color,
+          onTap: onBack,
+        ),
+        const Spacer(),
+        _DockIconButton(
+          icon: Icons.palette_outlined,
+          tooltip: 'Theme',
+          color: color,
+          onTap: () => _cycleTheme(context, ref),
+        ),
+        _DockIconButton(
+          icon: Icons.leaderboard_rounded,
+          tooltip: 'Statistics',
+          color: color,
+          onTap: () => _visit(context, ref, AppRoutes.statistics),
+        ),
+        _DockIconButton(
+          icon: Icons.settings_rounded,
+          tooltip: 'Settings',
+          color: color,
+          onTap: () => _visit(context, ref, AppRoutes.settings),
+        ),
+      ],
     );
   }
 
@@ -74,43 +74,32 @@ class GameTopBar extends ConsumerWidget {
   }
 }
 
-class _CircleIconButton extends StatelessWidget {
-  const _CircleIconButton({
+class _DockIconButton extends StatelessWidget {
+  const _DockIconButton({
     required this.icon,
     required this.onTap,
     required this.tooltip,
+    required this.color,
   });
 
   final IconData icon;
   final VoidCallback onTap;
 
-  /// Required, not optional — an icon-only circular button with no
-  /// tooltip has no accessible name at all (this used to be nullable,
-  /// defaulting to an empty-string Tooltip message, which is exactly how
-  /// the back button on every gameplay screen ended up silent to screen
-  /// readers).
+  /// Required, not optional — an icon-only button with no tooltip has no
+  /// accessible name at all (this used to be nullable, defaulting to an
+  /// empty-string Tooltip message, which is exactly how the back button on
+  /// every gameplay screen ended up silent to screen readers).
   final String tooltip;
+
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: colorScheme.surface,
-        shape: const CircleBorder(),
-        elevation: 1,
-        shadowColor: Colors.black.withValues(alpha: 0.15),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Icon(icon, size: 22, color: colorScheme.onSurfaceVariant),
-          ),
-        ),
-      ),
+    return IconButton(
+      onPressed: onTap,
+      tooltip: tooltip,
+      icon: Icon(icon, size: 22, color: color),
+      visualDensity: VisualDensity.compact,
     );
   }
 }

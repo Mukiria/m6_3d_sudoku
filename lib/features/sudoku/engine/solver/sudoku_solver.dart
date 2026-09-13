@@ -1,5 +1,6 @@
-import '../models/board.dart';
 import 'dart:math';
+
+import 'package:m6_sudoku/features/sudoku/engine/models/board.dart';
 
 class SudokuSolver {
   static bool solve(Board board, {Random? random}) {

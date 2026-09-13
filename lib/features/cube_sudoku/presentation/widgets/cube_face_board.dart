@@ -48,7 +48,9 @@ class CubeFaceBoard extends StatelessWidget {
           onCellLongPress: onCellLongPress,
         ),
         if (gameState.status == GameStatus.failed)
-          Positioned.fill(child: _FailedFaceOverlay(face: face, onRetry: onRetry)),
+          Positioned.fill(
+            child: _FailedFaceOverlay(face: face, onRetry: onRetry),
+          ),
       ],
     );
   }
@@ -79,11 +81,7 @@ class _FailedFaceOverlay extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.close_rounded,
-                  size: 48,
-                  color: colorScheme.error,
-                ),
+                Icon(Icons.close_rounded, size: 48, color: colorScheme.error),
                 const SizedBox(height: AppConstants.spacingSm),
                 Text(
                   '${face.displayName} face failed',

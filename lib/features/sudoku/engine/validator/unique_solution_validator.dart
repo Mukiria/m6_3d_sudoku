@@ -1,4 +1,4 @@
-import '../models/board.dart';
+import 'package:m6_sudoku/features/sudoku/engine/models/board.dart';
 
 class UniqueSolutionValidator {
   static bool hasUniqueSolution(Board board) {

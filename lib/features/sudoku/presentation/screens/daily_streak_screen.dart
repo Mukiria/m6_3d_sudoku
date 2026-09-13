@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
-import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
 import 'package:m6_sudoku/core/routing/app_router.dart';
+import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
 import 'package:m6_sudoku/shared/widgets/buttons.dart';
 
 const List<String> _weekdayLabels = [
@@ -140,7 +140,7 @@ class _SunBadge extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Icon(
+          const Icon(
                 Icons.wb_sunny_rounded,
                 size: 220,
                 color: AppThemeExtension.brandOrange,

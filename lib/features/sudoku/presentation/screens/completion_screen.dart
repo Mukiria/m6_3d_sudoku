@@ -1,14 +1,14 @@
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:confetti/confetti.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
+import 'package:m6_sudoku/core/routing/app_router.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
-import 'package:m6_sudoku/shared/widgets/buttons.dart';
 import 'package:m6_sudoku/features/statistics/presentation/providers/statistics_provider.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
-import 'package:m6_sudoku/core/routing/app_router.dart';
+import 'package:m6_sudoku/shared/widgets/buttons.dart';
 
 class CompletionScreen extends ConsumerStatefulWidget {
   const CompletionScreen({
@@ -110,16 +110,16 @@ class _CompletionScreenState extends ConsumerState<CompletionScreen>
     Color difficultyColor;
     switch (widget.difficulty) {
       case 'easy':
-        difficultyColor = extension.difficultyEasyColor!;
+        difficultyColor = extension.difficultyEasyColor;
         break;
       case 'medium':
-        difficultyColor = extension.difficultyMediumColor!;
+        difficultyColor = extension.difficultyMediumColor;
         break;
       case 'hard':
-        difficultyColor = extension.difficultyHardColor!;
+        difficultyColor = extension.difficultyHardColor;
         break;
       case 'expert':
-        difficultyColor = extension.difficultyExpertColor!;
+        difficultyColor = extension.difficultyExpertColor;
         break;
       default:
         difficultyColor = colorScheme.primary;
@@ -226,7 +226,7 @@ class _CompletionScreenState extends ConsumerState<CompletionScreen>
                           icon: Icons.timer_rounded,
                           label: 'Time',
                           value: _formatTime(widget.time),
-                          color: extension.timerText!,
+                          color: extension.timerText,
                           delay: 500,
                         ),
                         _buildCompletionStat(
@@ -234,7 +234,7 @@ class _CompletionScreenState extends ConsumerState<CompletionScreen>
                           icon: Icons.close_rounded,
                           label: 'Mistakes',
                           value: '${widget.mistakes}/3',
-                          color: extension.mistakeIndicatorColor!,
+                          color: extension.mistakeIndicatorColor,
                           delay: 600,
                         ),
                         _buildCompletionStat(
@@ -242,7 +242,7 @@ class _CompletionScreenState extends ConsumerState<CompletionScreen>
                           icon: Icons.lightbulb_rounded,
                           label: 'Hints',
                           value: '${widget.hintsUsed}/3',
-                          color: extension.hintIndicatorColor!,
+                          color: extension.hintIndicatorColor,
                           delay: 700,
                         ),
                       ],

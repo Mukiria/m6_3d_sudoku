@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 
 class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
-  /// Fixed brand colors that stay constant across light and dark themes.
-  static const Color brandOrange = Color(0xFFF1592B);
-  static const Color brandOrangeLight = Color(0xFFFFB74D);
-  static const Color brandBlue = Color(0xFF1976D2);
-
   const AppThemeExtension({
     required this.cellBackground,
     required this.cellBorder,
@@ -49,6 +44,11 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     required this.difficultyHardColor,
     required this.difficultyExpertColor,
   });
+
+  /// Fixed brand colors that stay constant across light and dark themes.
+  static const Color brandOrange = Color(0xFFF1592B);
+  static const Color brandOrangeLight = Color(0xFFFFB74D);
+  static const Color brandBlue = Color(0xFF1976D2);
 
   final Color cellBackground;
   final Color cellBorder;

@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/achievement.dart';
 import 'package:m6_sudoku/core/errors/failures.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/achievement.dart';
 
 abstract class AchievementRepository {
   Future<Either<Failure, List<Achievement>>> getAchievements();
@@ -18,9 +18,16 @@ abstract class AchievementRepository {
   /// one atomic read-modify-write, returning every achievement this call
   /// unlocked (possibly empty). Prefer this over multiple [incrementProgress]
   /// calls for achievements that can progress together from one event.
+  ///
+  /// [distinctProgress] (achievement id → distinct value credited this
+  /// call) is for achievements that must progress by *distinct* values
+  /// rather than a plain count — see
+  /// `AchievementLocalDataSource.incrementProgressBatch`'s doc for why a
+  /// plain delta can't express that.
   Future<Either<Failure, List<Achievement>>> incrementProgressBatch(
-    Map<String, int> deltas,
-  );
+    Map<String, int> deltas, {
+    Map<String, String> distinctProgress = const {},
+  });
   Future<Either<Failure, List<Achievement>>> getUnlockedAchievements();
   Future<Either<Failure, List<Achievement>>> getLockedAchievements();
 }

@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
-import 'package:vector_math/vector_math_64.dart' show Matrix3, Matrix4, Vector3;
 import 'package:m6_sudoku/features/cube_sudoku/domain/entities/cube_face.dart';
+import 'package:vector_math/vector_math_64.dart' show Matrix3, Matrix4, Vector3;
 
 /// Pure 3D geometry for laying six Sudoku boards onto the faces of a
 /// cube: each face's fixed orientation, the camera-facing test used to

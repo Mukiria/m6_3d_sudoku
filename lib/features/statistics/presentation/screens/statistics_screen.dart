@@ -1,14 +1,17 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/core/routing/app_router.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
-import 'package:m6_sudoku/shared/widgets/cards.dart';
-import 'package:m6_sudoku/shared/widgets/buttons.dart';
-import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 import 'package:m6_sudoku/features/statistics/domain/entities/statistics.dart';
-import '../providers/statistics_provider.dart';
+import 'package:m6_sudoku/features/statistics/presentation/providers/statistics_provider.dart';
+import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
+import 'package:m6_sudoku/shared/widgets/buttons.dart';
+import 'package:m6_sudoku/shared/widgets/cards.dart';
+import 'package:m6_sudoku/shared/widgets/glass/glass_surface.dart';
 
 class StatisticsScreen extends ConsumerWidget {
   const StatisticsScreen({super.key});
@@ -20,22 +23,35 @@ class StatisticsScreen extends ConsumerWidget {
     final statisticsAsync = ref.watch(statisticsProvider);
     final recentGames = ref.watch(recentGamesProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          tooltip: 'Home',
-          onPressed:
-              () =>
-                  context.canPop() ? context.pop() : context.go(AppRoutes.home),
-        ),
-        title: const Text('Statistics'),
-        centerTitle: true,
-      ),
-      body: statisticsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (error, stack) => Center(
+    void onBack() =>
+        context.canPop() ? context.pop() : context.go(AppRoutes.home);
+
+    return statisticsAsync.when(
+      loading:
+          () => Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                tooltip: 'Home',
+                onPressed: onBack,
+              ),
+              title: const Text('Statistics'),
+              centerTitle: true,
+            ),
+            body: const Center(child: CircularProgressIndicator()),
+          ),
+      error:
+          (error, stack) => Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                tooltip: 'Home',
+                onPressed: onBack,
+              ),
+              title: const Text('Statistics'),
+              centerTitle: true,
+            ),
+            body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -50,94 +66,134 @@ class StatisticsScreen extends ConsumerWidget {
                 ],
               ),
             ),
-        data:
-            (stats) => CustomScrollView(
+          ),
+      data:
+          (stats) => Scaffold(
+            body: CustomScrollView(
               slivers: [
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _GlassAppBarDelegate(
+                    title: 'Statistics',
+                    onBack: onBack,
+                  ),
+                ),
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.all(AppConstants.spacingLg),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Overview Stats
-                        _buildStatCard(
-                          theme,
-                          extension,
-                          'Games Played',
-                          stats.gamesPlayed.toString(),
-                          Icons.games_rounded,
-                          extension.difficultyMediumColor,
-                          fullWidth: true,
-                        ),
-                        const SizedBox(height: AppConstants.spacingMd),
-                        _buildStatCard(
-                          theme,
-                          extension,
-                          'Games Won',
-                          stats.gamesWon.toString(),
-                          Icons.emoji_events_rounded,
-                          extension.difficultyEasyColor,
-                          fullWidth: true,
-                        ),
-                        const SizedBox(height: AppConstants.spacingMd),
-                        _buildStatCard(
-                          theme,
-                          extension,
-                          'Cubes Completed',
-                          stats.cubesCompleted.toString(),
-                          Icons.view_in_ar_rounded,
-                          AppThemeExtension.brandOrange,
-                          fullWidth: true,
-                        ),
-                        const SizedBox(height: AppConstants.spacingMd),
-                        _buildStatCard(
-                          theme,
-                          extension,
-                          'Win Rate',
-                          '${(stats.winRate * 100).toStringAsFixed(1)}%',
-                          Icons.trending_up_rounded,
-                          extension.difficultyMediumColor,
-                          fullWidth: true,
-                        ),
-                        const SizedBox(height: AppConstants.spacingMd),
-                        _buildStatCard(
-                          theme,
-                          extension,
-                          'Best Streak',
-                          '${stats.bestStreak}',
-                          Icons.local_fire_department_rounded,
-                          extension.difficultyHardColor,
-                          fullWidth: true,
-                        ),
-                        const SizedBox(height: AppConstants.spacingMd),
-                        _buildStatCard(
-                          theme,
-                          extension,
-                          'Avg Time',
-                          stats.formattedAverageTime,
-                          Icons.timer_outlined,
-                          extension.difficultyExpertColor,
-                          fullWidth: true,
-                        ),
-                        const SizedBox(height: AppConstants.spacingMd),
-                        _buildStatCard(
-                          theme,
-                          extension,
-                          'Current Streak',
-                          '${stats.currentStreak}',
-                          Icons.local_fire_department_outlined,
-                          extension.difficultyHardColor,
-                          fullWidth: true,
-                        ),
-                        const SizedBox(height: AppConstants.spacingMd),
-                        _buildStatCard(
-                          theme,
-                          extension,
-                          'Total Time',
-                          stats.formattedTotalTime,
-                          Icons.timer_rounded,
-                          extension.difficultyExpertColor,
-                          fullWidth: true,
+                        // Overview Stats — two per row (50% width each).
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final cardWidth =
+                                (constraints.maxWidth -
+                                    AppConstants.spacingMd) /
+                                2;
+                            return Wrap(
+                              spacing: AppConstants.spacingMd,
+                              runSpacing: AppConstants.spacingMd,
+                              children: [
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildStatCard(
+                                    theme,
+                                    extension,
+                                    'Games Played',
+                                    stats.gamesPlayed.toString(),
+                                    Icons.games_rounded,
+                                    extension.difficultyMediumColor,
+                                    fullWidth: true,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildStatCard(
+                                    theme,
+                                    extension,
+                                    'Games Won',
+                                    stats.gamesWon.toString(),
+                                    Icons.emoji_events_rounded,
+                                    extension.difficultyEasyColor,
+                                    fullWidth: true,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildStatCard(
+                                    theme,
+                                    extension,
+                                    'Cubes Completed',
+                                    stats.cubesCompleted.toString(),
+                                    Icons.view_in_ar_rounded,
+                                    AppThemeExtension.brandOrange,
+                                    fullWidth: true,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildStatCard(
+                                    theme,
+                                    extension,
+                                    'Win Rate',
+                                    '${(stats.winRate * 100).toStringAsFixed(1)}%',
+                                    Icons.trending_up_rounded,
+                                    extension.difficultyMediumColor,
+                                    fullWidth: true,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildStatCard(
+                                    theme,
+                                    extension,
+                                    'Best Streak',
+                                    '${stats.bestStreak}',
+                                    Icons.local_fire_department_rounded,
+                                    extension.difficultyHardColor,
+                                    fullWidth: true,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildStatCard(
+                                    theme,
+                                    extension,
+                                    'Avg Time',
+                                    stats.formattedAverageTime,
+                                    Icons.timer_outlined,
+                                    extension.difficultyExpertColor,
+                                    fullWidth: true,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildStatCard(
+                                    theme,
+                                    extension,
+                                    'Current Streak',
+                                    '${stats.currentStreak}',
+                                    Icons.local_fire_department_outlined,
+                                    extension.difficultyHardColor,
+                                    fullWidth: true,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildStatCard(
+                                    theme,
+                                    extension,
+                                    'Total Time',
+                                    stats.formattedTotalTime,
+                                    Icons.timer_rounded,
+                                    extension.difficultyExpertColor,
+                                    fullWidth: true,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
 
                         const SizedBox(height: AppConstants.spacingXl),
@@ -201,7 +257,7 @@ class StatisticsScreen extends ConsumerWidget {
                 ),
               ],
             ),
-      ),
+          ),
     );
   }
 
@@ -519,6 +575,74 @@ class StatisticsScreen extends ConsumerWidget {
             ],
           ),
     );
+  }
+}
+
+/// A glass top bar that shrinks as the page scrolls — the one screen in the
+/// app whose header genuinely needs to respond to scroll position, since it
+/// sits over the same long list of cards its blur is meant to reveal.
+class _GlassAppBarDelegate extends SliverPersistentHeaderDelegate {
+  _GlassAppBarDelegate({required this.title, required this.onBack});
+
+  final String title;
+  final VoidCallback onBack;
+
+  static const double _expandedHeight = 96;
+  static const double _collapsedHeight = 56;
+
+  @override
+  double get minExtent => _collapsedHeight;
+
+  @override
+  double get maxExtent => _expandedHeight;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final t = (shrinkOffset / (_expandedHeight - _collapsedHeight)).clamp(
+      0.0,
+      1.0,
+    );
+    final theme = Theme.of(context);
+
+    return GlassSurface(
+      cornerRadius: 0,
+      padding: EdgeInsets.only(bottom: lerpDouble(16, 6, t)!),
+      child: SafeArea(
+        bottom: false,
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                tooltip: 'Home',
+                onPressed: onBack,
+              ),
+              Expanded(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: lerpDouble(26, 18, t),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 48),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _GlassAppBarDelegate oldDelegate) {
+    return title != oldDelegate.title || onBack != oldDelegate.onBack;
   }
 }
 

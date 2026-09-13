@@ -1,13 +1,14 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show compute;
+
 import 'package:dartz/dartz.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/daily_challenge.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
-import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
-import 'package:m6_sudoku/features/sudoku/engine/generator/puzzle_generator.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:m6_sudoku/core/errors/failures.dart';
 import 'package:m6_sudoku/core/services/json_store.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/daily_challenge.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
+import 'package:m6_sudoku/features/sudoku/engine/generator/puzzle_generator.dart';
+import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 
 class DailyChallengeLocalDataSource {
   DailyChallengeLocalDataSource(this._storage) : _json = JsonStore(_storage);
@@ -69,10 +70,12 @@ class DailyChallengeLocalDataSource {
     try {
       final existing = await _getDailyChallenge(date);
       if (existing == null) {
-        return Left(NotFoundFailure('Daily challenge not found'));
+        return const Left(NotFoundFailure('Daily challenge not found'));
       }
       if (existing.isCompleted) {
-        return Left(ValidationFailure('Daily challenge already completed'));
+        return const Left(
+          ValidationFailure('Daily challenge already completed'),
+        );
       }
 
       final completed = existing.copyWith(

@@ -7,6 +7,7 @@ import 'package:m6_sudoku/features/cube_sudoku/presentation/providers/cube_game_
 import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/game_provider.dart'
     show showPencilMarksProvider;
+import 'package:m6_sudoku/shared/widgets/glass/glass_surface.dart';
 
 /// [face]'s control panel — the cube-sudoku counterpart of the regular
 /// game's `NumberPad`, wired to [cubeGameControllerProvider] for one face
@@ -52,13 +53,14 @@ class CubeNumberPad extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _ActionCard(
-          colorScheme: colorScheme,
           children: [
             _ActionButton(
               icon: Icons.undo_rounded,
               label: 'Undo',
               isEnabled: selection.hasHistory,
-              onTap: () => ref.read(cubeGameControllerProvider.notifier).undo(face),
+              onTap:
+                  () =>
+                      ref.read(cubeGameControllerProvider.notifier).undo(face),
               colorScheme: colorScheme,
             ),
             _ActionButton(
@@ -119,7 +121,9 @@ class CubeNumberPad extends ConsumerWidget {
               label: 'Hint',
               isEnabled: hintsRemaining > 0,
               onTap:
-                  () => ref.read(cubeGameControllerProvider.notifier).useHint(face),
+                  () => ref
+                      .read(cubeGameControllerProvider.notifier)
+                      .useHint(face),
               colorScheme: colorScheme,
               badgeText: 'Free x$hintsRemaining',
               badgeColor: colorScheme.primary,
@@ -129,7 +133,6 @@ class CubeNumberPad extends ConsumerWidget {
         ),
         const SizedBox(height: AppConstants.spacingMd),
         _ActionCard(
-          colorScheme: colorScheme,
           children: List.generate(9, (index) {
             final number = index + 1;
             final isDisabled = disabledNumbers.contains(number);
@@ -201,31 +204,19 @@ class CubeNumberPad extends ConsumerWidget {
   }
 }
 
-/// The rounded white card shared by the action row and the number row —
-/// visually identical to `NumberPad`'s private counterpart.
+/// The glass dock shared by the action row and the number row — visually
+/// identical to `NumberPad`'s private counterpart.
 class _ActionCard extends StatelessWidget {
-  const _ActionCard({required this.children, required this.colorScheme});
+  const _ActionCard({required this.children});
 
   final List<Widget> children;
-  final ColorScheme colorScheme;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassSurface(
       padding: const EdgeInsets.symmetric(
         horizontal: AppConstants.spacingSm,
         vertical: AppConstants.spacingSm,
-      ),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,

@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 import 'package:m6_sudoku/features/sudoku/engine/puzzle_session_ops.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'game_provider.g.dart';
 
@@ -210,11 +210,14 @@ class GameController extends _$GameController {
       // _incrementAchievements) rather than one write per achievement, so
       // there's exactly one read-modify-write cycle against achievement
       // storage per completion — not several racing ones.
-      final achievementDeltas = ref.read(
+      final evaluateAchievementDeltas = ref.read(
         evaluateAchievementDeltasUseCaseProvider,
-      )(currentState);
+      );
+      final achievementDeltas = evaluateAchievementDeltas(currentState);
+      final distinctAchievementProgress = evaluateAchievementDeltas
+          .distinctProgressCredits(currentState);
       _completeDailyChallengeIfNeeded(currentState, achievementDeltas);
-      _incrementAchievements(achievementDeltas);
+      _incrementAchievements(achievementDeltas, distinctAchievementProgress);
       ref.read(audioServiceProvider).playWin();
       SemanticsService.announce('Puzzle solved!', TextDirection.ltr);
     }
@@ -339,7 +342,7 @@ class GameController extends _$GameController {
         // Add penalty time (15 seconds for logical hints, 30 for direct reveal)
         final penalty = hint.hintType == HintType.directReveal ? 30 : 15;
 
-        setValue(hint.row, hint.col, hint.value!);
+        setValue(hint.row, hint.col, hint.value);
         state = state!.copyWith(
           hintsUsed: currentState.hintsUsed + 1,
           penaltyTime: currentState.penaltyTime + penalty,
@@ -347,7 +350,7 @@ class GameController extends _$GameController {
           hintState: HintState(
             type: hint.hintType,
             cell: CellPosition(row: hint.row, col: hint.col),
-            value: hint.value!,
+            value: hint.value,
             explanation: hint.explanation,
             shownAt: DateTime.now(),
           ),
@@ -408,7 +411,11 @@ class GameController extends _$GameController {
     final nextMove = currentState.redoStack.first;
     final remainingRedo = currentState.redoStack.sublist(1);
 
-    final applied = _ops.applyHistoryMove(currentState, nextMove, isUndo: false);
+    final applied = _ops.applyHistoryMove(
+      currentState,
+      nextMove,
+      isUndo: false,
+    );
 
     state = currentState.copyWith(
       userGrid: applied.grid,
@@ -424,7 +431,6 @@ class GameController extends _$GameController {
     ref.read(audioServiceProvider).playClick();
     _saveGame();
   }
-
 
   void toggleNoteMode() {
     if (state == null) return;
@@ -463,6 +469,14 @@ class GameController extends _$GameController {
       status: GameStatus.playing,
       lastPlayed: DateTime.now(),
     );
+    // pause() persists the paused status immediately (see its own
+    // _saveGame() call) — without saving here too, a save landing between
+    // pause and resume (e.g. the app being killed right after resuming,
+    // before any further move) would leave GameStatus.paused as the last
+    // thing on disk. loadGame()/_startSession() only treat a saved
+    // GameStatus.playing session as resumable, so that stale paused status
+    // would silently discard the session and start a fresh game instead.
+    _saveGame();
     ref.read(audioServiceProvider).playResume();
   }
 
@@ -476,6 +490,16 @@ class GameController extends _$GameController {
     final saveGame = ref.read(saveGameStateUseCaseProvider);
     saveGame(state!.copyWith(lastSaved: DateTime.now()));
   }
+
+  /// Forces an immediate save of whatever session is currently live.
+  ///
+  /// Every real move already autosaves (see `_saveGame` call sites above),
+  /// and there's a 30s backup timer besides — but neither fires on its own
+  /// when the app is backgrounded or killed, so a timer tick's worth of
+  /// `timeElapsed` (up to ~30s) could otherwise be lost between the last
+  /// action and the process dying. Called from the app-lifecycle observer
+  /// in `main.dart` on pause/detach.
+  void saveNow() => _saveGame();
 
   Timer? _autoSaveTimer;
 
@@ -497,9 +521,10 @@ class GameController extends _$GameController {
   // copy — CheckCompletionUseCase already implemented this exact check but
   // had no caller; this used to silently duplicate it here instead.
   bool _isGridComplete(List<List<int>> grid, List<List<int>> solution) {
-    final result = ref.read(
-      checkCompletionUseCaseProvider,
-    )(grid: grid, solution: solution);
+    final result = ref.read(checkCompletionUseCaseProvider)(
+      grid: grid,
+      solution: solution,
+    );
     return result.fold((_) => false, (complete) => complete);
   }
 
@@ -508,12 +533,16 @@ class GameController extends _$GameController {
     state = state!.copyWith(hintState: null);
   }
 
-  /// Applies [deltas] in one batched write and queues every achievement
-  /// that write unlocked for [AchievementUnlockBanner] to animate.
-  Future<void> _incrementAchievements(Map<String, int> deltas) async {
+  /// Applies [deltas] and [distinctProgress] in one batched write and
+  /// queues every achievement that write unlocked for
+  /// [AchievementUnlockBanner] to animate.
+  Future<void> _incrementAchievements(
+    Map<String, int> deltas,
+    Map<String, String> distinctProgress,
+  ) async {
     final result = await ref.read(
       incrementAchievementProgressBatchUseCaseProvider,
-    )(deltas);
+    )(deltas, distinctProgress: distinctProgress);
     result.fold((_) {}, (unlocked) {
       for (final achievement in unlocked) {
         try {

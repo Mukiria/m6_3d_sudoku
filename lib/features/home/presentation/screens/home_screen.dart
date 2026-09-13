@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/core/routing/app_router.dart';
@@ -10,6 +10,7 @@ import 'package:m6_sudoku/features/cube_sudoku/presentation/providers/cube_game_
 import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/game_provider.dart';
 import 'package:m6_sudoku/shared/widgets/buttons.dart';
+import 'package:m6_sudoku/shared/widgets/cards.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -86,12 +87,12 @@ class HomeScreen extends ConsumerWidget {
                                       () => _continueGame(
                                         context,
                                         ref,
-                                        gameState!,
+                                        gameState,
                                       ),
                                   variant: AppButtonVariant.filled,
                                   size: AppButtonSize.large,
-                                  backgroundColor:
-                                      AppThemeExtension.brandOrange,
+                                  glassTint: AppThemeExtension.brandOrange
+                                      .withValues(alpha: 0.85),
                                   foregroundColor: Colors.white,
                                   child: const Text('Continue Game'),
                                 )
@@ -107,7 +108,8 @@ class HomeScreen extends ConsumerWidget {
                                     ),
                                 variant: AppButtonVariant.filled,
                                 size: AppButtonSize.large,
-                                backgroundColor: AppThemeExtension.brandOrange,
+                                glassTint: AppThemeExtension.brandOrange
+                                    .withValues(alpha: 0.85),
                                 foregroundColor: Colors.white,
                                 icon: const Icon(Icons.add_rounded),
                                 child: const Text('New Game'),
@@ -139,12 +141,12 @@ class HomeScreen extends ConsumerWidget {
                                       () => _continueCube(
                                         context,
                                         ref,
-                                        cubeState!,
+                                        cubeState,
                                       ),
                                   variant: AppButtonVariant.filled,
                                   size: AppButtonSize.large,
-                                  backgroundColor:
-                                      AppThemeExtension.brandOrange,
+                                  glassTint: AppThemeExtension.brandOrange
+                                      .withValues(alpha: 0.85),
                                   foregroundColor: Colors.white,
                                   icon: const Icon(Icons.view_in_ar_rounded),
                                   child: const Text('Continue 3D Sudoku'),
@@ -156,12 +158,12 @@ class HomeScreen extends ConsumerWidget {
                           ],
                           AppButton(
                                 onPressed:
-                                    () => context.push(
-                                      AppRoutes.cubeDifficulty,
-                                    ),
+                                    () =>
+                                        context.push(AppRoutes.cubeDifficulty),
                                 variant: AppButtonVariant.filled,
                                 size: AppButtonSize.large,
-                                backgroundColor: AppThemeExtension.brandOrange,
+                                glassTint: AppThemeExtension.brandOrange
+                                    .withValues(alpha: 0.85),
                                 foregroundColor: Colors.white,
                                 icon: const Icon(Icons.view_in_ar_rounded),
                                 child: const Text('Play 3D Sudoku'),
@@ -276,11 +278,11 @@ class _HomeColors {
   static const Color text = Color(0xFF2C2A28);
 }
 
-/// A solid card-style quick-action tile: sized to fit its icon+label content
-/// (rather than a fixed button height) so it never overflows. Uses an
-/// opaque-ish white card with a soft shadow — rather than relying on the
-/// backdrop image for contrast — so it stays legible regardless of what's
-/// behind it.
+/// A quick-action tile: a thin wrapper over [AppCard] (sized to fit its
+/// icon+label content rather than a fixed button height) so these four
+/// buttons render as the same neutral glass surface as every other card in
+/// the app — the splash image behind them shows through, blurred and
+/// tinted, rather than being covered by an opaque card.
 class _QuickActionButton extends StatelessWidget {
   const _QuickActionButton({
     required this.icon,
@@ -294,35 +296,22 @@ class _QuickActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.9),
-      borderRadius: BorderRadius.circular(12),
-      elevation: 3,
-      shadowColor: Colors.black.withValues(alpha: 0.25),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+    return AppCard(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      onTap: onPressed,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 24, color: AppThemeExtension.brandOrange),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: _HomeColors.text,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 24, color: AppThemeExtension.brandOrange),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: _HomeColors.text,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }

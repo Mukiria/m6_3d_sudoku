@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/daily_streak.dart';
 import 'package:m6_sudoku/core/errors/failures.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/daily_streak.dart';
 
 abstract class DailyStreakRepository {
   /// Marks today as a completed-puzzle day (if not already marked) and

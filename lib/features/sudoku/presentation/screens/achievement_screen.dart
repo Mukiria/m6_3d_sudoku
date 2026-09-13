@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
-import 'package:m6_sudoku/shared/widgets/buttons.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/achievement.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
+import 'package:m6_sudoku/shared/widgets/buttons.dart';
+import 'package:m6_sudoku/shared/widgets/glass/glass_surface.dart';
 
 class AchievementScreen extends ConsumerWidget {
   const AchievementScreen({super.key});
@@ -72,19 +73,9 @@ class AchievementScreen extends ConsumerWidget {
       slivers: [
         // Header
         SliverToBoxAdapter(
-          child: Container(
+          child: GlassSurface(
+            margin: const EdgeInsets.all(AppConstants.spacingMd),
             padding: const EdgeInsets.all(AppConstants.spacingLg),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  extension.difficultyExpertColor.withValues(alpha: 0.1),
-                  extension.difficultyHardColor.withValues(alpha: 0.05),
-                ],
-              ),
-              border: Border(
-                bottom: BorderSide(color: colorScheme.outlineVariant, width: 1),
-              ),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -168,9 +159,7 @@ class AchievementScreen extends ConsumerWidget {
           ),
         ),
         // Categories
-        ...categories
-            .map((group) => _buildCategorySliver(context, group))
-            .toList(),
+        ...categories.map((group) => _buildCategorySliver(context, group)),
       ],
     );
   }
@@ -180,8 +169,9 @@ class AchievementScreen extends ConsumerWidget {
     final extension = theme.extension<AppThemeExtension>()!;
     final colorScheme = theme.colorScheme;
 
-    if (group.achievements.isEmpty)
+    if (group.achievements.isEmpty) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
 
     return SliverToBoxAdapter(
       child: Padding(
@@ -450,8 +440,7 @@ class AchievementScreen extends ConsumerWidget {
 }
 
 class _CategoryGroup {
+  _CategoryGroup({required this.category, required this.achievements});
   final AchievementCategory category;
   final List<Achievement> achievements;
-
-  _CategoryGroup({required this.category, required this.achievements});
 }

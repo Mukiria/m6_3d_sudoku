@@ -7,6 +7,7 @@ import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/game_provider.dart';
 import 'package:m6_sudoku/shared/widgets/buttons.dart';
+import 'package:m6_sudoku/shared/widgets/glass/glass_surface.dart';
 
 class PauseMenu extends ConsumerWidget {
   const PauseMenu({super.key});
@@ -18,86 +19,94 @@ class PauseMenu extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
     final gameState = ref.watch(gameControllerProvider);
 
-    return Container(
-      padding: const EdgeInsets.all(AppConstants.spacingLg),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppConstants.largeBorderRadius),
+    // A bottom sheet's builder is only given loose width constraints, and
+    // GlassSurface (unlike the plain Container this replaced) sizes itself
+    // to its content rather than stretching to fill on its own — without
+    // this, the sheet renders as a narrow, centered card instead of a
+    // full-width sheet.
+    return SizedBox(
+      width: double.infinity,
+      child: GlassSurface(
+        variant: GlassVariant.strong,
+        topLeftRadius: AppConstants.largeBorderRadius,
+        topRightRadius: AppConstants.largeBorderRadius,
+        bottomLeftRadius: 0,
+        bottomRightRadius: 0,
+        padding: const EdgeInsets.all(AppConstants.spacingLg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: AppConstants.spacingLg),
+              decoration: BoxDecoration(
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              'Game Paused',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: AppConstants.spacingSm),
+            Text(
+              'Time: ${_formatTime(gameState?.timeElapsed ?? 0)}',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppConstants.spacingLg),
+            AppButton(
+              // GameScreen's own pause-sheet completion handler (see
+              // _showPauseOverlay) is what actually resumes the game and
+              // timer, for every way this sheet can close (this button,
+              // swipe-to-dismiss, tapping the scrim) — this just closes it.
+              onPressed: () => context.pop(),
+              variant: AppButtonVariant.filled,
+              size: AppButtonSize.large,
+              glassTint: AppThemeExtension.brandOrange.withValues(alpha: 0.85),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.play_arrow_rounded),
+              child: const Text('Resume'),
+            ),
+            const SizedBox(height: AppConstants.spacingMd),
+            AppButton(
+              onPressed: () {
+                context.go(AppRoutes.home);
+              },
+              variant: AppButtonVariant.outlined,
+              size: AppButtonSize.large,
+              icon: const Icon(Icons.home_rounded),
+              child: const Text('Main Menu'),
+            ),
+            const SizedBox(height: AppConstants.spacingMd),
+            AppButton(
+              onPressed: () {
+                if (gameState != null) {
+                  ref
+                      .read(gameControllerProvider.notifier)
+                      .newGame(
+                        Difficulty.values.firstWhere(
+                          (d) => d.name == gameState.difficulty.name,
+                          orElse: () => Difficulty.easy,
+                        ),
+                      );
+                }
+                context.pop();
+              },
+              // Outlined, not a second filled/tinted CTA — Resume is the one
+              // action this sheet should weight as primary.
+              variant: AppButtonVariant.outlined,
+              size: AppButtonSize.large,
+              icon: const Icon(Icons.refresh_rounded),
+              child: const Text('Restart'),
+            ),
+            const SizedBox(height: AppConstants.spacingLg),
+          ],
         ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.only(bottom: AppConstants.spacingLg),
-            decoration: BoxDecoration(
-              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Text(
-            'Game Paused',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingSm),
-          Text(
-            'Time: ${_formatTime(gameState?.timeElapsed ?? 0)}',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingLg),
-          AppButton(
-            onPressed: () {
-              ref.read(gameControllerProvider.notifier).resume();
-              context.pop();
-            },
-            variant: AppButtonVariant.filled,
-            size: AppButtonSize.large,
-            backgroundColor: AppThemeExtension.brandOrange,
-            foregroundColor: Colors.white,
-            icon: const Icon(Icons.play_arrow_rounded),
-            child: const Text('Resume'),
-          ),
-          const SizedBox(height: AppConstants.spacingMd),
-          AppButton(
-            onPressed: () {
-              context.go(AppRoutes.home);
-            },
-            variant: AppButtonVariant.outlined,
-            size: AppButtonSize.large,
-            icon: const Icon(Icons.home_rounded),
-            child: const Text('Main Menu'),
-          ),
-          const SizedBox(height: AppConstants.spacingMd),
-          AppButton(
-            onPressed: () {
-              if (gameState != null) {
-                ref
-                    .read(gameControllerProvider.notifier)
-                    .newGame(
-                      Difficulty.values.firstWhere(
-                        (d) => d.name == gameState!.difficulty.name,
-                        orElse: () => Difficulty.easy,
-                      ),
-                    );
-              }
-              context.pop();
-            },
-            variant: AppButtonVariant.filled,
-            size: AppButtonSize.large,
-            backgroundColor: AppThemeExtension.brandOrange,
-            foregroundColor: Colors.white,
-            icon: const Icon(Icons.refresh_rounded),
-            child: const Text('Restart'),
-          ),
-          const SizedBox(height: AppConstants.spacingLg),
-        ],
       ),
     );
   }

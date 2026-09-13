@@ -1,6 +1,31 @@
 import 'package:equatable/equatable.dart';
 
 class Statistics extends Equatable {
+  factory Statistics.fromJson(Map<String, dynamic> json) {
+    return Statistics(
+      gamesPlayed: json['gamesPlayed'] ?? 0,
+      gamesWon: json['gamesWon'] ?? 0,
+      currentStreak: json['currentStreak'] ?? 0,
+      bestStreak: json['bestStreak'] ?? 0,
+      totalTimeSeconds: json['totalTimeSeconds'] ?? 0,
+      hintsUsed: json['hintsUsed'] ?? 0,
+      mistakesMade: json['mistakesMade'] ?? 0,
+      bestTimesByDifficulty: Map<String, int>.from(
+        json['bestTimesByDifficulty'] ?? {},
+      ),
+      gamesWonByDifficulty: Map<String, int>.from(
+        json['gamesWonByDifficulty'] ?? {},
+      ),
+      gamesPlayedByDifficulty: Map<String, int>.from(
+        json['gamesPlayedByDifficulty'] ?? {},
+      ),
+      lastPlayed:
+          json['lastPlayed'] != null
+              ? DateTime.parse(json['lastPlayed'])
+              : null,
+      cubesCompleted: json['cubesCompleted'] ?? 0,
+    );
+  }
   const Statistics({
     required this.gamesPlayed,
     required this.gamesWon,
@@ -109,32 +134,6 @@ class Statistics extends Equatable {
     };
   }
 
-  factory Statistics.fromJson(Map<String, dynamic> json) {
-    return Statistics(
-      gamesPlayed: json['gamesPlayed'] ?? 0,
-      gamesWon: json['gamesWon'] ?? 0,
-      currentStreak: json['currentStreak'] ?? 0,
-      bestStreak: json['bestStreak'] ?? 0,
-      totalTimeSeconds: json['totalTimeSeconds'] ?? 0,
-      hintsUsed: json['hintsUsed'] ?? 0,
-      mistakesMade: json['mistakesMade'] ?? 0,
-      bestTimesByDifficulty: Map<String, int>.from(
-        json['bestTimesByDifficulty'] ?? {},
-      ),
-      gamesWonByDifficulty: Map<String, int>.from(
-        json['gamesWonByDifficulty'] ?? {},
-      ),
-      gamesPlayedByDifficulty: Map<String, int>.from(
-        json['gamesPlayedByDifficulty'] ?? {},
-      ),
-      lastPlayed:
-          json['lastPlayed'] != null
-              ? DateTime.parse(json['lastPlayed'])
-              : null,
-      cubesCompleted: json['cubesCompleted'] ?? 0,
-    );
-  }
-
   @override
   List<Object?> get props => [
     gamesPlayed,
@@ -153,6 +152,17 @@ class Statistics extends Equatable {
 }
 
 class GameRecord extends Equatable {
+  factory GameRecord.fromJson(Map<String, dynamic> json) {
+    return GameRecord(
+      id: json['id'] ?? '',
+      date: DateTime.parse(json['date']),
+      difficulty: json['difficulty'] ?? '',
+      timeSeconds: json['timeSeconds'] ?? 0,
+      mistakes: json['mistakes'] ?? 0,
+      hintsUsed: json['hintsUsed'] ?? 0,
+      completed: json['completed'] ?? false,
+    );
+  }
   const GameRecord({
     required this.id,
     required this.date,
@@ -181,18 +191,6 @@ class GameRecord extends Equatable {
       'hintsUsed': hintsUsed,
       'completed': completed,
     };
-  }
-
-  factory GameRecord.fromJson(Map<String, dynamic> json) {
-    return GameRecord(
-      id: json['id'] ?? '',
-      date: DateTime.parse(json['date']),
-      difficulty: json['difficulty'] ?? '',
-      timeSeconds: json['timeSeconds'] ?? 0,
-      mistakes: json['mistakes'] ?? 0,
-      hintsUsed: json['hintsUsed'] ?? 0,
-      completed: json['completed'] ?? false,
-    );
   }
 
   @override

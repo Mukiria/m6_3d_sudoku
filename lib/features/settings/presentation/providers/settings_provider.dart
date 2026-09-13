@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:m6_sudoku/features/settings/data/datasources/settings_local_datasource.dart';
 import 'package:m6_sudoku/features/settings/data/repositories/settings_repository_impl.dart';
 import 'package:m6_sudoku/features/settings/domain/entities/settings.dart';
-import 'package:m6_sudoku/features/settings/domain/usecases/settings_usecases.dart';
 import 'package:m6_sudoku/features/settings/domain/repositories/settings_repository.dart';
+import 'package:m6_sudoku/features/settings/domain/usecases/settings_usecases.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart';
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
@@ -39,7 +39,7 @@ final themeModeProvider = StateProvider<ThemeMode>((ref) {
 });
 
 class SettingsController extends StateNotifier<Settings> {
-  SettingsController(this._ref) : super(Settings()) {
+  SettingsController(this._ref) : super(const Settings()) {
     _loadSettings();
   }
 
@@ -133,7 +133,7 @@ class SettingsController extends StateNotifier<Settings> {
     final result = await resetSettings();
     result.fold(
       (failure) => debugPrint('Failed to reset settings: $failure'),
-      (_) => state = Settings(),
+      (_) => state = const Settings(),
     );
   }
 }

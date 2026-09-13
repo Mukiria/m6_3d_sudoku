@@ -1,8 +1,8 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
-import 'package:m6_sudoku/features/sudoku/presentation/widgets/hint_overlay.dart';
-import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
+import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
+import 'package:m6_sudoku/features/sudoku/presentation/widgets/hint_overlay.dart';
 
 void main() {
   group('HintOverlay Widget Tests', () {

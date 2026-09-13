@@ -2,19 +2,22 @@ import 'dart:async';
 
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:m6_sudoku/features/cube_sudoku/domain/entities/cube_face.dart';
 import 'package:m6_sudoku/features/cube_sudoku/domain/entities/cube_game_state.dart';
 import 'package:m6_sudoku/features/cube_sudoku/presentation/providers/cube_sudoku_providers.dart';
+import 'package:m6_sudoku/features/statistics/presentation/providers/statistics_provider.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/game_state.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 import 'package:m6_sudoku/features/sudoku/engine/puzzle_session_ops.dart';
-import 'package:m6_sudoku/features/statistics/presentation/providers/statistics_provider.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/game_provider.dart'
     show showPencilMarksProvider;
 import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart'
-    show audioServiceProvider, checkCompletionUseCaseProvider, getHintUseCaseProvider;
+    show
+        audioServiceProvider,
+        checkCompletionUseCaseProvider,
+        getHintUseCaseProvider;
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'cube_game_provider.g.dart';
 
@@ -128,8 +131,8 @@ class CubeGameController extends _$CubeGameController {
 
     final isFixed =
         faceState.puzzle.grid[faceState.selectedCell!.row][faceState
-                .selectedCell!
-                .col] !=
+            .selectedCell!
+            .col] !=
         0;
     if (isFixed) return;
 
@@ -500,6 +503,11 @@ class CubeGameController extends _$CubeGameController {
     saveGame(state!.copyWith(lastSaved: DateTime.now()));
   }
 
+  /// Forces an immediate save of whatever cube session is currently live —
+  /// see [GameController.saveNow]'s doc comment for why this needs to exist
+  /// alongside the per-move and 30s-backup autosaves.
+  void saveNow() => _saveGame();
+
   void _startAutoSave() {
     _autoSaveTimer?.cancel();
     _autoSaveTimer = Timer(const Duration(seconds: 30), () {
@@ -511,9 +519,10 @@ class CubeGameController extends _$CubeGameController {
   }
 
   bool _isGridComplete(List<List<int>> grid, List<List<int>> solution) {
-    final result = ref.read(
-      checkCompletionUseCaseProvider,
-    )(grid: grid, solution: solution);
+    final result = ref.read(checkCompletionUseCaseProvider)(
+      grid: grid,
+      solution: solution,
+    );
     return result.fold((_) => false, (complete) => complete);
   }
 }

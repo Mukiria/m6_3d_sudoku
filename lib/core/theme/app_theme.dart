@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
+import 'package:m6_sudoku/core/theme/glass_tokens.dart';
+import 'package:m6_sudoku/shared/widgets/glass/squircle_border.dart';
 
 class AppTheme {
   AppTheme._();
@@ -61,7 +62,7 @@ class AppTheme {
       highlightColor: colorScheme.primary.withValues(alpha: 0.12),
       splashColor: colorScheme.primary.withValues(alpha: 0.12),
       splashFactory: InkRipple.splashFactory,
-      pageTransitionsTheme: PageTransitionsTheme(
+      pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
@@ -277,18 +278,22 @@ class AppTheme {
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) return colorScheme.primary;
-          if (states.contains(WidgetState.disabled))
+          if (states.contains(WidgetState.disabled)) {
             return colorScheme.onSurface.withValues(alpha: 0.12);
+          }
           return colorScheme.surface;
         }),
         checkColor: WidgetStateProperty.all(colorScheme.onPrimary),
         overlayColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.hovered))
+          if (states.contains(WidgetState.hovered)) {
             return colorScheme.primary.withValues(alpha: 0.08);
-          if (states.contains(WidgetState.focused))
+          }
+          if (states.contains(WidgetState.focused)) {
             return colorScheme.primary.withValues(alpha: 0.12);
-          if (states.contains(WidgetState.pressed))
+          }
+          if (states.contains(WidgetState.pressed)) {
             return colorScheme.primary.withValues(alpha: 0.12);
+          }
           return null;
         }),
         side: BorderSide(color: colorScheme.outline, width: 2),
@@ -299,17 +304,21 @@ class AppTheme {
       radioTheme: RadioThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) return colorScheme.primary;
-          if (states.contains(WidgetState.disabled))
+          if (states.contains(WidgetState.disabled)) {
             return colorScheme.onSurface.withValues(alpha: 0.38);
+          }
           return colorScheme.onSurfaceVariant;
         }),
         overlayColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.hovered))
+          if (states.contains(WidgetState.hovered)) {
             return colorScheme.primary.withValues(alpha: 0.08);
-          if (states.contains(WidgetState.focused))
+          }
+          if (states.contains(WidgetState.focused)) {
             return colorScheme.primary.withValues(alpha: 0.12);
-          if (states.contains(WidgetState.pressed))
+          }
+          if (states.contains(WidgetState.pressed)) {
             return colorScheme.primary.withValues(alpha: 0.12);
+          }
           return null;
         }),
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -318,24 +327,30 @@ class AppTheme {
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) return colorScheme.primary;
-          if (states.contains(WidgetState.disabled))
+          if (states.contains(WidgetState.disabled)) {
             return colorScheme.onSurface.withValues(alpha: 0.12);
+          }
           return colorScheme.surface;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected))
+          if (states.contains(WidgetState.selected)) {
             return colorScheme.primary.withValues(alpha: 0.5);
-          if (states.contains(WidgetState.disabled))
+          }
+          if (states.contains(WidgetState.disabled)) {
             return colorScheme.onSurface.withValues(alpha: 0.12);
+          }
           return colorScheme.outlineVariant;
         }),
         overlayColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.hovered))
+          if (states.contains(WidgetState.hovered)) {
             return colorScheme.primary.withValues(alpha: 0.08);
-          if (states.contains(WidgetState.focused))
+          }
+          if (states.contains(WidgetState.focused)) {
             return colorScheme.primary.withValues(alpha: 0.12);
-          if (states.contains(WidgetState.pressed))
+          }
+          if (states.contains(WidgetState.pressed)) {
             return colorScheme.primary.withValues(alpha: 0.12);
+          }
           return null;
         }),
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -367,12 +382,15 @@ class AppTheme {
         ),
         dividerColor: colorScheme.outlineVariant,
         overlayColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.hovered))
+          if (states.contains(WidgetState.hovered)) {
             return colorScheme.primary.withValues(alpha: 0.08);
-          if (states.contains(WidgetState.focused))
+          }
+          if (states.contains(WidgetState.focused)) {
             return colorScheme.primary.withValues(alpha: 0.12);
-          if (states.contains(WidgetState.pressed))
+          }
+          if (states.contains(WidgetState.pressed)) {
             return colorScheme.primary.withValues(alpha: 0.12);
+          }
           return null;
         }),
       ),
@@ -420,10 +438,13 @@ class AppTheme {
         elevation: 8,
         backgroundColor: colorScheme.surface,
         surfaceTintColor: colorScheme.surfaceTint,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            AppConstants.largeBorderRadius.toDouble(),
-          ),
+        // A dialog rounds all four corners uniformly, so it can take the
+        // squircle shape directly. A bottom sheet can't yet (it needs
+        // top-only rounding, which SquircleBorder doesn't support) — its
+        // glass treatment lands in a later phase alongside that shape
+        // support and the sheet content itself.
+        shape: const SquircleBorder(
+          cornerRadius: AppConstants.largeBorderRadius,
         ),
         titleTextStyle: textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w600,
@@ -622,7 +643,10 @@ class AppTheme {
         yearBackgroundColor: WidgetStateProperty.all(colorScheme.surface),
         yearForegroundColor: WidgetStateProperty.all(colorScheme.onSurface),
       ),
-      extensions: <ThemeExtension<dynamic>>[AppThemeExtension.light],
+      extensions: const <ThemeExtension<dynamic>>[
+        AppThemeExtension.light,
+        GlassTokens.light,
+      ],
     );
   }
 
@@ -677,7 +701,10 @@ class AppTheme {
       hoverColor: colorScheme.primary.withValues(alpha: 0.08),
       highlightColor: colorScheme.primary.withValues(alpha: 0.12),
       splashColor: colorScheme.primary.withValues(alpha: 0.12),
-      extensions: <ThemeExtension<dynamic>>[AppThemeExtension.dark],
+      extensions: <ThemeExtension<dynamic>>[
+        AppThemeExtension.dark,
+        GlassTokens.dark,
+      ],
     );
   }
 }
