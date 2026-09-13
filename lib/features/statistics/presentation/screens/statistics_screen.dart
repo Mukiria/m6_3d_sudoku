@@ -70,13 +70,7 @@ class StatisticsScreen extends ConsumerWidget {
                 SliverAppBar(
                   pinned: true,
                   backgroundColor: Colors.transparent,
-                  flexibleSpace: SizedBox.expand(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: AppThemeExtension.headerGradient,
-                      ),
-                    ),
-                  ),
+                  flexibleSpace: glassHeaderFlexibleSpace(),
                   leading: IconButton(
                     icon: const Icon(Icons.arrow_back_rounded),
                     tooltip: 'Home',
