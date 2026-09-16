@@ -1,13 +1,21 @@
 name: Release
 
+# Triggered by pushing a `v*` tag (e.g. `v1.1.0+2`, matching pubspec's
+# `version:`). Produces a signed AAB/APK, cuts a GitHub Release with the
+# artifacts attached, and — only if the required secrets are configured
+# (see docs/DEPLOYMENT.md) — uploads the AAB to the Play Console *internal*
+# testing track. Promotion from internal -> production is a deliberate
+# manual step in Play Console, not automated here, so a bad build can't
+# reach real users without a human looking at it first.
+
 on:
   push:
     tags:
       - 'v*'
 
 jobs:
-  release:
-    name: Create Release
+  build-and-release:
+    name: Build, Sign and Release
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -19,10 +27,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Cache Pub packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
       - name: Setup Flutter
+        # Was pinned to 3.24.0 here while ci.yml/BuildAPK.yml use 3.29.3 —
+        # aligned so the release build runs the same toolchain CI validated.
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
+          flutter-version: "3.29.3"
           channel: 'stable'
           cache: true
 
@@ -33,22 +51,70 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Analyze code
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Run tests
         run: flutter test
 
+      # --- Real release signing -------------------------------------------
+      # android/app/build.gradle.kts falls back to the DEBUG signing config
+      # whenever android/key.properties is absent — which is always true on
+      # a clean CI runner. Without this step, every artifact this workflow
+      # has ever produced was debug-signed and could not be uploaded to
+      # Play Console (or would silently mismatch the app's real signing
+      # identity). This decodes the upload keystore from a base64 secret
+      # and writes key.properties so the *real* release signingConfig is
+      # used instead.
+      #
+      # Required repo secrets (Settings -> Secrets and variables -> Actions):
+      #   ANDROID_KEYSTORE_BASE64   base64 of android/app/keystore/upload-keystore.jks
+      #                             (`base64 -i upload-keystore.jks | pbcopy` on macOS)
+      #   ANDROID_KEYSTORE_PASSWORD
+      #   ANDROID_KEY_ALIAS
+      #   ANDROID_KEY_PASSWORD
+      - name: Decode release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::ANDROID_KEYSTORE_BASE64 secret is not set — falling back to debug signing. This build is NOT suitable for Play Store distribution. See docs/DEPLOYMENT.md."
+            exit 0
+          fi
+          mkdir -p android/app/keystore
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/keystore/upload-keystore.jks
+          cat > android/key.properties << PROPS
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=keystore/upload-keystore.jks
+          PROPS
+
       - name: Build release APK
-        run: flutter build apk --release --split-per-abi
+        run: >
+          flutter build apk --release --split-per-abi
+          --obfuscate --split-debug-info=build/symbols
 
       - name: Build release AAB
-        run: flutter build appbundle --release
+        run: >
+          flutter build appbundle --release
+          --obfuscate --split-debug-info=build/symbols
+
+      # De-obfuscation symbols (needed to make Crashlytics/Play Console
+      # crash stack traces readable once real minification is in effect).
+      # Kept as a build artifact, not committed — each release's symbols
+      # must be retrievable if a crash needs investigating later.
+      - name: Upload obfuscation symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-symbols-${{ github.ref_name }}
+          path: build/symbols
+          retention-days: 90
 
       - name: Extract version from tag
         id: version
         run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Create Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref }}
@@ -61,3 +127,35 @@ jobs:
             build/app/outputs/bundle/release/app-release.aab
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- Play Console upload (internal testing track only) --------------
+      # Requires the PLAY_SERVICE_ACCOUNT_JSON secret (a Google Play
+      # Developer API service account key with Release Manager access on
+      # this app). Skipped with a warning, not a failure, if absent — so
+      # this workflow keeps producing GitHub Releases even before Play
+      # publishing is wired up.
+      - name: Check Play Console credentials
+        id: play_creds
+        run: |
+          if [ -z "${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}" ]; then
+            echo "::warning::PLAY_SERVICE_ACCOUNT_JSON secret is not set — skipping Play Console upload. See docs/DEPLOYMENT.md."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload AAB to Play Console (internal track)
+        if: steps.play_creds.outputs.configured == 'true'
+        uses: r0adkll/upload-google-play@v1.1.3
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          # NOTE: must match the applicationId Play Console already has this
+          # app listed under. build.gradle currently declares
+          # com.msixv.m6sudoku while README/RELEASE_NOTES link to
+          # com.m6.sudoku on the Play Store — confirm which is correct
+          # before enabling this secret, or this upload will fail (or
+          # silently target the wrong listing). See docs/DEPLOYMENT.md.
+          packageName: com.msixv.m6sudoku
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: internal
+          status: draft

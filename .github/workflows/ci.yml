@@ -6,9 +6,12 @@ on:
   pull_request:
     branches: [main, master]
 
+env:
+  FLUTTER_VERSION: "3.29.3"
+
 jobs:
   build:
-    name: Build, Test and Release
+    name: Build, Test and Verify
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -27,7 +30,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.29.3"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
 
@@ -54,6 +57,20 @@ jobs:
 
       - name: Run tests
         run: flutter test --coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+          retention-days: 14
+
+      # Validates the web target compiles on every PR — previously only the
+      # Android APK was built in CI, so a web-only regression (e.g. a
+      # dart:io import, a plugin without web support) could land on main
+      # undetected until someone ran `flutter build web` by hand.
+      - name: Build release web bundle (validation only, not deployed)
+        run: flutter build web --release
 
       - name: Build release APK
         run: flutter build apk --release --split-per-abi

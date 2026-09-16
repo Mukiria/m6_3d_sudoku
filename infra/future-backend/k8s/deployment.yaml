@@ -1,0 +1,75 @@
+# Illustrative only — see ../README.md. Not tuned for a real workload.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: m6-sudoku-sync-api
+  labels:
+    app: m6-sudoku-sync-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: m6-sudoku-sync-api
+  template:
+    metadata:
+      labels:
+        app: m6-sudoku-sync-api
+    spec:
+      containers:
+        - name: sync-api
+          image: gcr.io/PROJECT_ID/m6-sudoku-sync-api:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          envFrom:
+            - secretRef:
+                name: m6-sudoku-sync-api-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: m6-sudoku-sync-api
+spec:
+  selector:
+    app: m6-sudoku-sync-api
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: m6-sudoku-sync-api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: m6-sudoku-sync-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
