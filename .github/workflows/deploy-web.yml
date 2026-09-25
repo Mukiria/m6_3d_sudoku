@@ -2,11 +2,10 @@ name: Deploy Web
 
 # Deploys the Flutter web build to Firebase Hosting. Runs a *preview
 # channel* deploy on every PR (a disposable, shareable URL — safe, doesn't
-# touch production) and a *live* deploy only on push to main. Requires the
-# repo to actually have a Firebase project + firebase.json (see
-# docs/DEPLOYMENT.md — neither exists in this repo yet, so this workflow
-# will fail until that's set up; it does not run destructively in the
-# meantime, it just fails visibly).
+# touch production) and a *live* deploy only on push to main. Hosting config
+# (rewrites, cache headers) lives in firebase.json. Until the
+# FIREBASE_SERVICE_ACCOUNT secret and FIREBASE_PROJECT_ID variable exist,
+# every step skips with a warning — see docs/DEPLOYMENT.md.
 
 on:
   push:
@@ -17,6 +16,12 @@ on:
 permissions:
   contents: read
   pull-requests: write
+
+# Live deploys queue rather than race, so an older build can never finish
+# last and overwrite a newer one. PR previews just take the latest push.
+concurrency:
+  group: deploy-web-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   deploy:
@@ -53,9 +58,11 @@ jobs:
         if: steps.fb_creds.outputs.configured == 'true'
         run: dart run build_runner build --delete-conflicting-outputs
 
-      - name: Build web (release, CanvasKit renderer for cube-mode 3D rendering fidelity)
+      # CanvasKit is the default (and, since Flutter 3.29, only non-wasm)
+      # renderer — `--web-renderer` was removed in 3.29 and would fail here.
+      - name: Build web (release)
         if: steps.fb_creds.outputs.configured == 'true'
-        run: flutter build web --release --web-renderer canvaskit
+        run: flutter build web --release
 
       # PR: preview channel — a temporary URL, auto-expires, never touches
       # the production site. Comments the preview link on the PR.
@@ -67,7 +74,6 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: ${{ vars.FIREBASE_PROJECT_ID }}
           entryPoint: .
-          target: m6-sudoku
 
       # main: live production deploy. Firebase Hosting keeps prior versions
       # and supports an instant one-click rollback in the console/CLI if a
@@ -81,5 +87,4 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: ${{ vars.FIREBASE_PROJECT_ID }}
           entryPoint: .
-          target: m6-sudoku
           channelId: live

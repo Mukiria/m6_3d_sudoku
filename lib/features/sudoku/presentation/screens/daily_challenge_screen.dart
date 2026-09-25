@@ -204,8 +204,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
     // fraction, so this stays correct at any screen size.
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cardWidth =
-            (constraints.maxWidth - AppConstants.spacingMd) / 2;
+        final cardWidth = (constraints.maxWidth - AppConstants.spacingMd) / 2;
         return Wrap(
           spacing: AppConstants.spacingMd,
           runSpacing: AppConstants.spacingMd,

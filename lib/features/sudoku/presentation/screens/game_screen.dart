@@ -510,8 +510,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   ),
                   Text(
                     'Cell Options',
-                    style: Theme.of(context).textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: AppConstants.spacingLg),
                   Row(

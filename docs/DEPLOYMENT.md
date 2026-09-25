@@ -23,18 +23,10 @@ service-shaped runbook onto a client app. Section 6 covers Docker/Kubernetes
 directly, including the one place a container genuinely helps this project
 today and a reference design for *if* a backend gets built later.
 
-**Two blocking findings surfaced while building this** — both need your
-decision before the pipeline below can run for real; see the checklist in
-§8 for the full list:
+**One blocking finding surfaced while building this** — needs your decision
+before the pipeline below can run for real; see the checklist in §8:
 
-1. **`android/app/build.gradle.kts` declares `applicationId
-   "com.msixv.m6sudoku"`**, but `README.md` / `RELEASE_NOTES.md` link the
-   Play Store listing as `com.m6.sudoku`. If the app is actually published
-   under `com.m6.sudoku`, an automated upload using the current
-   `applicationId` will fail (or worse, silently create a second, wrong
-   listing). Confirm which ID the live Play Console listing actually uses
-   before enabling `deploy-play` in CI.
-2. **Every release build to date has been debug-signed.** `build.gradle`
+1. **Every release build to date has been debug-signed.** `build.gradle`
    falls back to the debug signing config whenever `android/key.properties`
    is missing, which is always true on a CI runner — there's no keystore
    secret configured in GitHub Actions. That means the APK/AAB attached to
@@ -125,10 +117,14 @@ Two new workflows handle actual deployment (previously there was none).
 
 | Workflow | Trigger | Does |
 |---|---|---|
-| `.github/workflows/ci.yml` | push/PR to `main` | format check, `flutter analyze`, `flutter test --coverage` (now uploaded as an artifact), **`flutter build web --release`** (new — validates the web target on every PR; previously only Android was built, so web-only regressions could land silently), build+upload debug-signed APK for manual QA sideloading |
-| `.github/workflows/release.yml` | push tag `v*` | pub get → codegen → analyze → test → **real release signing from secrets** (new) → `--obfuscate --split-debug-info` (new) → build APK+AAB → GitHub Release → **Play Console internal-track upload** (new, gated on secrets, `status: draft` so a human still hits publish) |
-| `.github/workflows/deploy-web.yml` (new) | push/PR to `main` | build web → Firebase Hosting **preview channel** on PRs, **live channel** on `main` |
+| `.github/workflows/ci.yml` | push/PR to `main` | format check (a real gate on committed code — it previously auto-formatted first, so it could never fail), `flutter analyze`, `flutter test --coverage` (now uploaded as an artifact), **`flutter build web --release`** (new — validates the web target on every PR; previously only Android was built, so web-only regressions could land silently), build+upload debug-signed APK for manual QA sideloading |
+| `.github/workflows/release.yml` | push tag `v*` | **tag must equal pubspec `version:`** (fails fast otherwise) → pub get → codegen → analyze → test → **real release signing from secrets** (new) → `--obfuscate --split-debug-info` (new) → build APK+AAB → GitHub Release → **Play Console internal-track upload** (new, gated on secrets, `status: draft` so a human still hits publish). An unsigned build is published as a GitHub **pre-release** and never sent to Play |
+| `.github/workflows/deploy-web.yml` (new) | push/PR to `main` | build web → Firebase Hosting **preview channel** on PRs, **live channel** on `main`. Hosting config is `firebase.json` (SPA rewrite, `no-cache` on JS/HTML/wasm so a deploy is picked up on next load, 1-day cache on images/fonts/audio, basic security headers) |
 | `.github/workflows/BuildAPK.yml` | manual (`workflow_dispatch`) | unchanged — ad hoc debug-signed APK for quick sideload testing, doesn't need signing secrets |
+
+All workflows use `concurrency` groups: CI and PR previews cancel superseded
+runs; live web deploys and releases queue instead, so an older build can
+never finish last and overwrite a newer one.
 
 All the version-drift fixes, signing wiring, obfuscation flags, and new
 workflows are already written into the repo (not just proposed) — see the
@@ -237,9 +233,12 @@ into any pipeline — it's a starting point for that day, not current work.
 
 **Currently: none.** No Crashlytics, Sentry, or analytics dependency exists
 in `pubspec.yaml`, confirmed. The app's `logger` package writes locally
-only — nothing leaves the device. For a "production-ready" app already on
-the Play Store, this means you're currently blind to crash rate, ANR rate,
-and error frequency in the wild except what users choose to report.
+only — nothing leaves the device. The app hasn't been published yet, so
+this is the moment to decide: without it, you'll launch blind to crash rate,
+ANR rate, and error frequency in the wild except what users choose to report.
+Adding Crashlytics also means updating the Play **data safety** form
+(crash logs + device info are collected), so it's a decision, not just a
+dependency.
 
 **Recommended, in priority order:**
 
@@ -272,30 +271,42 @@ and error frequency in the wild except what users choose to report.
 ## 8. Production deployment checklist
 
 **Blocking — resolve before enabling automated publishing:**
-- [ ] Confirm the real Play Console `applicationId`: `com.msixv.m6sudoku`
-      (current `build.gradle`) vs. `com.m6.sudoku` (README/RELEASE_NOTES
-      link). Fix whichever side is wrong before touching Play API uploads.
-- [ ] Verify `android/app/keystore/upload-keystore.jks` +
-      `android/key.properties` on disk are the **actual** keystore Play
-      Console already has on file for this app (not a newly generated
-      one) — Play Store rejects AAB updates signed with a different
-      upload key than it's already tracking.
+- [x] `applicationId` confirmed as `com.msixv.m6sudoku` (the app has not
+      been published yet, so this is the id the *first* Play Console
+      listing should be created under — `build.gradle.kts`,
+      `release.yml`, `README.md`, and `RELEASE_NOTES.md` are now
+      consistent on this value).
+- [ ] An upload keystore already exists locally, untracked, at
+      `android/app/keystore/upload-keystore.jks` (alias `upload`, per
+      `android/key.properties`). Since nothing has been published yet,
+      **this is the keystore to register with Play Console on first
+      upload** — don't generate a new one. Base64-encode it and its
+      passwords into the 4 Android signing secrets (§4.1). Once Play
+      Console has accepted a signed AAB once, **never regenerate or
+      replace this keystore** — every future update must be signed with
+      the same key, and losing it means losing the ability to publish
+      updates to this app entirely (back it up somewhere safe, outside
+      the repo, today).
+- [ ] Create the app listing in Play Console under `com.msixv.m6sudoku`
+      (App details, store listing, content rating, data safety form,
+      etc.) before the first automated `deploy-play` run — the Play
+      Developer API can upload a build to an *existing* app but cannot
+      create the listing itself.
 
 **CI/CD:**
 - [ ] Add the 4 Android signing secrets + `PLAY_SERVICE_ACCOUNT_JSON` (§4.1)
       once the above is confirmed.
-- [ ] Create a Firebase project, run `firebase init hosting`, commit the
-      resulting `firebase.json`/`.firebaserc` (currently absent from the
-      repo entirely), add `FIREBASE_SERVICE_ACCOUNT`/`FIREBASE_PROJECT_ID`.
+- [ ] Create a Firebase project, then add the `FIREBASE_SERVICE_ACCOUNT`
+      secret and `FIREBASE_PROJECT_ID` repo variable. `firebase.json` is
+      already committed; `.firebaserc` isn't needed because the workflow
+      passes the project ID explicitly. If you run `firebase init hosting`
+      anyway, keep the committed `firebase.json` rather than letting it
+      overwrite (its `public` must stay `build/web`).
 - [ ] Add a `main` branch protection rule requiring the `CI` check + review
       before merge.
-- [ ] Fill in `web/manifest.json` — it's currently a 0-byte empty file, so
-      the PWA has no name/icons/theme-color/start_url declared despite
-      `flutter_native_splash` being configured for web. "Add to Home
-      Screen" / installability won't work correctly until this has real
-      content (`flutter pub run flutter_native_splash:create` and the
-      launcher-icons config already reference a web icon — this file just
-      needs the standard manifest fields populated to match).
+- [x] `web/manifest.json` populated (it was a 0-byte file, so the PWA had
+      no name/icons/theme colour and wasn't installable); `index.html`'s
+      placeholder title/description ("A new Flutter project.") replaced.
 
 **Reliability:**
 - [ ] Flesh out `android/app/proguard-rules.pro` (currently a single
@@ -322,3 +333,8 @@ and error frequency in the wild except what users choose to report.
       done in this pass.
 - [x] Release builds now pass `--obfuscate --split-debug-info` — done in
       this pass (symbols uploaded as a 90-day CI artifact per release).
+- [x] `deploy-web.yml` no longer passes `--web-renderer canvaskit` (the
+      flag was removed in Flutter 3.29 and would have failed the first
+      real deploy) or a hosting `target` nothing defined.
+- [x] Keystore passwords are written to `key.properties` via `printf`
+      from env vars, not an unquoted heredoc that would mangle `$`/`` ` ``.

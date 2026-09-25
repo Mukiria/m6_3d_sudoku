@@ -9,6 +9,12 @@ on:
 env:
   FLUTTER_VERSION: "3.29.3"
 
+# A newer push to the same branch/PR supersedes an in-flight run — no point
+# finishing a build nobody will look at.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build, Test and Verify
@@ -43,14 +49,13 @@ jobs:
       - name: Generate code
         run: dart run build_runner build --delete-conflicting-outputs
 
-      - name: Apply automatic Dart fixes
-        run: dart fix --apply
-
-      - name: Format code
-        run: dart format .
-
+      # Checks committed code as-is. This used to run `dart fix --apply` and
+      # `dart format .` first, which meant the check below could never fail
+      # and CI tested code that differed from what was committed. Only
+      # tracked files are checked: build_runner output (*.g.dart,
+      # *.freezed.dart) is gitignored and isn't formatter-clean.
       - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed .
+        run: dart format --output=none --set-exit-if-changed $(git ls-files '*.dart')
 
       - name: Analyze code
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
