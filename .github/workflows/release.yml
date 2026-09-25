@@ -7,11 +7,17 @@ name: Release
 # testing track. Promotion from internal -> production is a deliberate
 # manual step in Play Console, not automated here, so a bad build can't
 # reach real users without a human looking at it first.
+#
+# Can also be run by hand (Actions tab -> Release -> Run workflow) on any
+# branch: builds the same signed APK/AAB and attaches them to the run as
+# downloadable artifacts, without tagging, cutting a GitHub Release, or
+# uploading to Play.
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 # Never run two releases at once, and never cancel one halfway through a
 # Play Console upload.
@@ -38,6 +44,7 @@ jobs:
       # release is mislabeled — or Play rejects it for reusing a versionCode
       # — so fail before spending 20 minutes building.
       - name: Verify tag matches pubspec version
+        if: github.event_name == 'push'
         run: |
           PUBSPEC_VERSION=$(grep -E '^version:' pubspec.yaml | awk '{print $2}')
           TAG_VERSION="${GITHUB_REF_NAME#v}"
@@ -131,15 +138,28 @@ jobs:
       - name: Upload obfuscation symbols
         uses: actions/upload-artifact@v4
         with:
-          name: debug-symbols-${{ github.ref_name }}
+          # run_number, not ref_name: a manual run's ref is a branch name,
+          # and artifact names can't contain the `/` in e.g. devops/foo.
+          name: debug-symbols-${{ github.run_number }}
           path: build/symbols
           retention-days: 90
 
+      - name: Upload APK and AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-build-${{ github.run_number }}
+          path: |
+            build/app/outputs/flutter-apk/*.apk
+            build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
       - name: Extract version from tag
+        if: github.event_name == 'push'
         id: version
         run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
+        if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref }}
@@ -162,6 +182,7 @@ jobs:
       # this workflow keeps producing GitHub Releases even before Play
       # publishing is wired up.
       - name: Check Play Console credentials
+        if: github.event_name == 'push'
         id: play_creds
         run: |
           if [ -z "${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}" ]; then
