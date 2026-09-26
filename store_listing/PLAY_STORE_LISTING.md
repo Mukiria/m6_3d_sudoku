@@ -25,13 +25,10 @@ pre-rebrand UI and are no longer used.
 
 **Before uploading:**
 
-- **Retake screenshot 6.** It was captured before the statistics tiles
-  were fixed, and every label and value is truncated ("Ga…", "Cub…",
-  "1…").
-- **Screenshot 2 shows the phone's status bar** (clock, a WhatsApp
-  notification icon, signal, 71% battery). Not a policy issue, but it
-  looks unpolished next to screenshot 1; crop the top ~110px or retake
-  with notifications cleared.
+- ~~Screenshot 6~~ retaken 2026-09-26 with the fixed, untruncated
+  statistics tiles (1080×1920); the same image is in Play Console.
+- ~~Screenshot 2 status bar~~ painted out 2026-09-26 (same 1080×1920
+  size, background-matched, so nothing else shifts).
 - ~~Feature graphic~~ redone 2026-09-26: "M6 3D Sudoku" logotype, cube,
   daily challenge and dark home screen.
 
@@ -57,7 +54,7 @@ Classic Sudoku plus a 3D cube of six puzzles. Daily challenges, hints & stats.
 
 ## Full description
 
-(4,000 characters max — this one is 1,953)
+(4,000 characters max — this one is 2,055)
 
 ```
 Sudoku, now in three dimensions.
@@ -75,6 +72,7 @@ M6 3D Sudoku gives you everything you expect from a great Sudoku game, plus some
 CLASSIC SUDOKU
 • Traditional 9×9 puzzles with a guaranteed single solution
 • Five difficulty levels: Easy, Medium, Hard, Expert and Evil
+• Every puzzle graded by the solving techniques it needs, from simple singles up to X-Wing and beyond
 • Notes mode for pencilling in candidates
 • Undo and erase whenever you change your mind
 • Highlighting for the selected row, column and box, and for mistakes
@@ -105,6 +103,8 @@ Download M6 3D Sudoku and start solving.
 
 Claims were checked against the code (five difficulties incl. Evil,
 per-face cube difficulty, drag/twist gestures, technique-naming hints,
+technique-graded puzzle bank (Hard = locked candidates, Expert up to
+X-Wing, Evil beyond),
 auto-save/resume, stats incl. win rate and best times). It deliberately
 says nothing about ads, so it stays accurate once AdMob is added — at
 that point only the "Contains ads" declaration needs changing.
@@ -114,9 +114,9 @@ that point only the "Contains ads" declaration needs changing.
 - **App category:** Game › Puzzle
 - **Tags:** Sudoku, Logic, Brain games (pick from Play's list)
 - **Privacy policy:** https://msixv.com/games/m6-3d-sudoku/privacy-policy/
-- **Email:** required — use a support address, it's shown publicly
+- **Email:** support@msixv.com (shown publicly — make sure the mailbox exists)
 
 ## Still outstanding for submission
 
-Data safety form, content rating questionnaire, target audience (13+),
-and the internal testing upload — see docs/DEPLOYMENT.md §8.
+Every Play Console answer (store listing, App content forms, production
+release) is in `PLAY_CONSOLE_ANSWERS.md`.

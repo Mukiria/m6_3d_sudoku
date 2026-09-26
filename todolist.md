@@ -1,7 +1,7 @@
 # Going live on Google Play — M6 3D Sudoku
 
-Package `com.msixv.m6sudoku` · version `1.0.0+4` (live on internal testing) ·
-last updated 2026-09-26
+Package `com.msixv.m6sudoku` · version `1.0.0+4` · **submitted for production
+review 2026-09-26** · last updated 2026-09-26
 
 `[x]` done · `[ ]` to do · ⚠️ needs checking
 
@@ -11,8 +11,10 @@ last updated 2026-09-26
 
 - [x] Google Play Console developer account (organisation — so **no**
       12-tester / 14-day closed-test requirement)
-- [ ] ⚠️ Confirm the organisation account is fully verified (D-U-N-S,
-      identity, contact details) — Play Console shows a banner if not
+- [x] Organisation account ("MSIXV", signed in as tech@msixv.com at
+      `play.google.com/console/u/2`) — no verification banner; Play says
+      all its apps are registered for Android developer verification
+      (checked 2026-09-26)
 - [x] Upload keystore exists (`android/app/keystore/upload-keystore.jks`,
       passwords in `android/key.properties`, both untracked)
 - [ ] **Back up the keystore + passwords outside the repo** (password
@@ -65,9 +67,10 @@ last updated 2026-09-26
 - [x] 3D cube screenshots added and placed first
 - [x] Fixed the truncated statistics tiles ("Ga…", "Cub…", "1…") seen in
       the statistics screenshot
-- [ ] **Retake the statistics screenshot** on a build with that fix
-- [ ] Crop the status bar off `Screenshot_3d_cube-2.jpg` (or retake with
-      notifications cleared)
+- [x] Statistics screenshot retaken — the one in Play Console already shows
+      the fixed, untruncated tiles
+- [x] Removed the status bar from `Screenshot_3d_cube-2.jpg` (painted out,
+      still 1080×1920)
 - [x] Feature graphic redone with the "M6 3D Sudoku" logotype and cube
       (`store_listing/images/`, 2026-09-26)
 - [x] `https://msixv.com/games/privacy-policy` is live (checked 2026-09-25)
@@ -79,27 +82,37 @@ last updated 2026-09-26
       (HTTP 200, 2026-09-25) — content not reviewed
 - [x] Fixed Settings › Rate App linking to the old `com.m6.sudoku` ID
       (from `1.0.0+3`)
-- [ ] Choose a public support email address
+- [x] Public support email: **support@msixv.com** (make sure the mailbox
+      exists)
+- [x] Full description mentions technique-graded difficulty (in
+      `PLAY_STORE_LISTING.md` only — optional to paste into Play, which
+      still has the earlier 1,953-character version)
+- [x] Cube screenshot moved to the front in Play; updated full description
+      (with the technique-grading line) pasted into Play; store tags added
 
 ## 5. Play Console setup
 
+All checked in Play Console on 2026-09-26 (read-only review). Answers are in
+`store_listing/PLAY_CONSOLE_ANSWERS.md`.
+
 - [x] Create the app: "M6 3D Sudoku: Cube Puzzles", **Game**, **Free**
-- [ ] ⚠️ Confirm production access: **Test and release › Production** should
-      offer **Create new release**. If it asks for a closed test or to
-      "apply for production access", the account is classed as personal
-      and the 12-tester / 14-day closed test applies after all
-- [ ] Main store listing: paste text, upload icon, feature graphic,
-      screenshots
-- [ ] Category: **Game › Puzzle**; contact email; privacy policy URL
-      `https://msixv.com/games/m6-3d-sudoku/privacy-policy/`
-- [ ] App access: all functionality available without login
-- [ ] Ads: **No** (change to Yes in the update that adds AdMob)
-- [ ] Content rating questionnaire (expect Everyone / PEGI 3)
-- [ ] Target audience: **13+** (avoids the Families policy, which would
-      restrict ads later)
-- [ ] Data safety: no data collected, no data shared
-- [ ] Advertising ID declaration: **No**
-- [ ] Government apps / financial features / health: No
+- [x] Production access: **Production** offers **Create new release** — no
+      closed-test / "apply for production access" requirement
+- [x] Default store listing (en-GB): name, short and full description,
+      icon, feature graphic, 6 phone screenshots — "Ready to send for review"
+- [x] Store settings: **Game › Puzzle**, support@msixv.com, website
+      https://msixv.com, phone number
+- [x] Phone number removed from the public store listing (email and
+      website kept)
+- [x] App content — all 10 declarations done, "Ready to send for review":
+      privacy policy (app-specific URL), sign-in (no special access), ads
+      (No), content rating, target audience (13–15, 16–17, 18+), data
+      safety (no data collected or shared), advertising ID (No), government
+      apps (No), financial features (none), health (none)
+- [x] Opted out of **Google Play Games on PC** (Advanced settings › Form
+      factors) — touch-first app, untested on PC; revisit later if wanted
+- [x] Managed publishing deliberately left **off** — the app goes live
+      automatically as soon as Google approves it
 
 ## 6. Internal testing
 
@@ -123,15 +136,21 @@ last updated 2026-09-26
 - [ ] On `1.0.0+4`: Evil New Game loads instantly, consecutive New Games
       differ, 3D cube starts quickly
 - [ ] Play through both modes
-- [ ] Review the pre-launch report for crashes
+- [ ] Pre-launch report: none exists — Play only generates them for
+      closed/open testing tracks, not internal. Not required for review
 
 ## 7. Go live
 
-- [ ] Promote the tested build to **Production**
-- [ ] Use a **staged rollout** — start at 10–20%
-- [ ] Submit for review (first review: a few days to about a week).
-      Internal testing isn't reviewed; the first production release is.
-      Needs every Play Console setup item in §5 done first
+- [x] **Production › Countries/regions**: all countries and regions
+- [x] **Production › Create new release** › Add from library › version
+      code **4 (1.0.0)**, release notes (`en-GB`)
+- [x] **Submitted for review 2026-09-26** (Publishing overview). First
+      review usually takes a few days to about a week; with managed
+      publishing off it goes live in all countries on approval
+- [ ] Watch tech@msixv.com and support@msixv.com for Google's approval or
+      policy questions; if rejected, check **Policy status** for the reason
+- [ ] Once live: install from the public Play listing and check the store
+      page (name, screenshots, description) looks right
 - [ ] Watch **Android vitals** (crash and ANR rates); ramp to 100% if clean
 
 ---
