@@ -1,7 +1,7 @@
 # Going live on Google Play — M6 3D Sudoku
 
-Package `com.msixv.m6sudoku` · `1.0.0+3` live on internal testing, `1.0.0+4`
-built and waiting to be uploaded · last updated 2026-09-26
+Package `com.msixv.m6sudoku` · version `1.0.0+4` (live on internal testing) ·
+last updated 2026-09-26
 
 `[x]` done · `[ ]` to do · ⚠️ needs checking
 
@@ -47,8 +47,8 @@ built and waiting to be uploaded · last updated 2026-09-26
 - [x] Tag must match `pubspec.yaml` version; unsigned builds are never sent
       to Play
 - [x] `1.0.0+4` work committed and pushed to `devops/cicd-deployment-setup`
-- [ ] Open a PR from `devops/cicd-deployment-setup` into `main`, let CI
-      pass, merge (the "Run workflow" button only appears once it's on
+- [x] Open a PR from `devops/cicd-deployment-setup` into `main`, let CI
+      pass, merge (PR #1, merged 2026-09-26) (the "Run workflow" button only appears once it's on
       `main`)
 - [ ] Add repo secrets: `ANDROID_KEYSTORE_BASE64`,
       `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD`,
@@ -105,7 +105,7 @@ built and waiting to be uploaded · last updated 2026-09-26
 
 - [x] Testing › Internal testing › create a release (`1.0.0+3`)
 - [x] Upload `app-release.aab` by hand (the first upload must be manual)
-      — uploaded version codes 1 and 3; the next build must be `1.0.0+4` or higher
+      — uploaded version codes 1, 3 and 4; the next build must be `1.0.0+5` or higher
 - [x] Native debug symbols zip for `1.0.0+3` (engine symbols from Google's
       bucket + `build/symbols`, build IDs verified) — script it in
       `release.yml` for future builds
@@ -114,7 +114,7 @@ built and waiting to be uploaded · last updated 2026-09-26
       sends no email)
 - [x] Install from the Play Store on your phone (the phone's Play Store
       errored; installing from play.google.com on desktop worked)
-- [ ] **Upload `1.0.0+4`**: Internal testing › Create new release › upload
+- [x] **Upload `1.0.0+4`**: Internal testing › Create new release › upload
       `build/app/outputs/bundle/release/app-release.aab`, then ⋮ › Upload
       native debug symbols ›
       `build/app/outputs/native-debug-symbols/native-debug-symbols-1.0.0+4.zip`
