@@ -1,6 +1,7 @@
 # Going live on Google Play — M6 3D Sudoku
 
-Package `com.msixv.m6sudoku` · version `1.0.0+3` (live on internal testing) · last updated 2026-09-26
+Package `com.msixv.m6sudoku` · `1.0.0+3` live on internal testing, `1.0.0+4`
+built and waiting to be uploaded · last updated 2026-09-26
 
 `[x]` done · `[ ]` to do · ⚠️ needs checking
 
@@ -29,6 +30,14 @@ Package `com.msixv.m6sudoku` · version `1.0.0+3` (live on internal testing) · 
 - [x] Install the release build on a real phone (via internal testing,
       2026-09-26) — playing well so far
 - [ ] Finish a classic game and a full 3D cube to the end on that build
+- [x] Fixed Evil taking minutes on "Generating puzzle" — generation is ~100×
+      faster and capped at 2 s (`1.0.0+4`)
+- [x] Difficulties graded by solving technique; new games come from a
+      bundled, pre-graded puzzle bank and load instantly (`1.0.0+4`)
+- [x] Fixed every other New Game replaying the previous puzzle (`1.0.0+4`)
+- [x] Daily challenge is always genuinely Medium (`1.0.0+4`)
+- [x] Version bumped to `1.0.0+4`, signed AAB built and checked (upload key,
+      version code 4, puzzle banks bundled)
 
 ## 3. Build pipeline (GitHub)
 
@@ -37,6 +46,7 @@ Package `com.msixv.m6sudoku` · version `1.0.0+3` (live on internal testing) · 
       **Actions › Release › Run workflow**
 - [x] Tag must match `pubspec.yaml` version; unsigned builds are never sent
       to Play
+- [x] `1.0.0+4` work committed and pushed to `devops/cicd-deployment-setup`
 - [ ] Open a PR from `devops/cicd-deployment-setup` into `main`, let CI
       pass, merge (the "Run workflow" button only appears once it's on
       `main`)
@@ -74,6 +84,10 @@ Package `com.msixv.m6sudoku` · version `1.0.0+3` (live on internal testing) · 
 ## 5. Play Console setup
 
 - [x] Create the app: "M6 3D Sudoku: Cube Puzzles", **Game**, **Free**
+- [ ] ⚠️ Confirm production access: **Test and release › Production** should
+      offer **Create new release**. If it asks for a closed test or to
+      "apply for production access", the account is classed as personal
+      and the 12-tester / 14-day closed test applies after all
 - [ ] Main store listing: paste text, upload icon, feature graphic,
       screenshots
 - [ ] Category: **Game › Puzzle**; contact email; privacy policy URL
@@ -100,6 +114,14 @@ Package `com.msixv.m6sudoku` · version `1.0.0+3` (live on internal testing) · 
       sends no email)
 - [x] Install from the Play Store on your phone (the phone's Play Store
       errored; installing from play.google.com on desktop worked)
+- [ ] **Upload `1.0.0+4`**: Internal testing › Create new release › upload
+      `build/app/outputs/bundle/release/app-release.aab`, then ⋮ › Upload
+      native debug symbols ›
+      `build/app/outputs/native-debug-symbols/native-debug-symbols-1.0.0+4.zip`
+      (build IDs already verified) › Save and publish. Must be done by hand:
+      both files are over the 10 MB browser-automation upload limit
+- [ ] On `1.0.0+4`: Evil New Game loads instantly, consecutive New Games
+      differ, 3D cube starts quickly
 - [ ] Play through both modes
 - [ ] Review the pre-launch report for crashes
 
@@ -107,7 +129,9 @@ Package `com.msixv.m6sudoku` · version `1.0.0+3` (live on internal testing) · 
 
 - [ ] Promote the tested build to **Production**
 - [ ] Use a **staged rollout** — start at 10–20%
-- [ ] Submit for review (first review: a few days to about a week)
+- [ ] Submit for review (first review: a few days to about a week).
+      Internal testing isn't reviewed; the first production release is.
+      Needs every Play Console setup item in §5 done first
 - [ ] Watch **Android vitals** (crash and ANR rates); ramp to 100% if clean
 
 ---
