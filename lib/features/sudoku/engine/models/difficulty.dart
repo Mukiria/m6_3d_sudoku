@@ -31,7 +31,7 @@ enum Difficulty {
       case Difficulty.expert:
         return 22;
       case Difficulty.evil:
-        return 20;
+        return 21;
     }
   }
 }
