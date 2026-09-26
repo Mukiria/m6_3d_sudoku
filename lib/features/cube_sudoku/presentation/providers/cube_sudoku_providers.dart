@@ -5,9 +5,13 @@ import 'package:m6_sudoku/features/cube_sudoku/domain/repositories/cube_game_rep
 import 'package:m6_sudoku/features/cube_sudoku/domain/usecases/cube_achievement_usecases.dart';
 import 'package:m6_sudoku/features/cube_sudoku/domain/usecases/cube_game_usecases.dart';
 import 'package:m6_sudoku/features/sudoku/presentation/providers/sudoku_providers.dart'
-    show puzzleGeneratorProvider, storageServiceProvider;
+    show
+        puzzleBankSourceProvider,
+        puzzleGeneratorProvider,
+        storageServiceProvider;
 
-// Shares the regular game's storage service and puzzle generator instances
+// Shares the regular game's storage service, puzzle generator and puzzle
+// bank instances
 // (see sudoku_providers.dart) rather than standing up its own — a cube
 // session is a second, independently-keyed save (see
 // CubeGameLocalDataSource), not a second storage backend.
@@ -16,7 +20,8 @@ final cubeGameLocalDataSourceProvider = Provider<CubeGameLocalDataSource>((
 ) {
   final storage = ref.read(storageServiceProvider);
   final generator = ref.read(puzzleGeneratorProvider);
-  return CubeGameLocalDataSource(storage, generator);
+  final bank = ref.read(puzzleBankSourceProvider);
+  return CubeGameLocalDataSource(storage, generator, bank);
 });
 
 final cubeGameRepositoryProvider = Provider<CubeGameRepository>((ref) {

@@ -52,6 +52,7 @@ flutter:
   assets:
     - assets/images/
     - assets/audio/
+    - assets/puzzles/
   # Bundled rather than fetched by google_fonts: release builds have no
   # INTERNET permission. Inter 4.1 static TTFs (SIL OFL, see
   # assets/fonts/LICENSE.txt), one file per weight the UI actually uses.
