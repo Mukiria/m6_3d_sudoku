@@ -1,0 +1,55 @@
+# Reproducible Flutter build environment for M6 Sudoku.
+#
+# This app has no server component to "containerize" for production — it
+# ships as a Play Store APK/AAB and a static web bundle (see
+# docs/DEPLOYMENT.md). What Docker *does* legitimately buy here is a
+# pinned, reproducible build environment: "works on my machine" drift
+# between contributors' local Flutter SDKs, or a future move to
+# self-hosted GitHub Actions runners, both go away if the build always
+# runs inside this image.
+#
+# Usage:
+#   docker build -f Dockerfile.ci -t m6-sudoku-builder .
+#   docker run --rm -v "$PWD":/workspace m6-sudoku-builder \
+#     flutter build apk --release --split-per-abi
+#
+# Not used by ci.yml/release.yml today (subosito/flutter-action is faster
+# on GitHub-hosted runners thanks to its own Flutter SDK cache) — this is
+# for local parity and as a ready-made self-hosted-runner base image.
+
+FROM debian:bookworm-slim
+
+ARG FLUTTER_VERSION=3.29.3
+ENV DEBIAN_FRONTEND=noninteractive \
+    PATH="/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:${PATH}"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      curl \
+      git \
+      unzip \
+      xz-utils \
+      ca-certificates \
+      openjdk-17-jdk-headless \
+      && rm -rf /var/lib/apt/lists/*
+
+RUN git clone --depth 1 --branch "${FLUTTER_VERSION}" \
+      https://github.com/flutter/flutter.git /opt/flutter \
+    && flutter --version \
+    && flutter precache --android \
+    && flutter config --no-analytics
+
+# Android SDK command-line tools + platform/build-tools matching build.gradle
+ENV ANDROID_SDK_ROOT=/opt/android-sdk
+RUN mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools" \
+    && curl -sSL -o /tmp/cmdline-tools.zip \
+      "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" \
+    && unzip -q /tmp/cmdline-tools.zip -d "$ANDROID_SDK_ROOT/cmdline-tools" \
+    && mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools" "$ANDROID_SDK_ROOT/cmdline-tools/latest" \
+    && rm /tmp/cmdline-tools.zip
+ENV PATH="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools:${PATH}"
+RUN yes | sdkmanager --licenses > /dev/null \
+    && sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+WORKDIR /workspace
+ENTRYPOINT ["/bin/bash", "-lc"]
+CMD ["flutter --version"]

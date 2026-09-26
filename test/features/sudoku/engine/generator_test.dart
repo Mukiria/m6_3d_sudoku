@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m6_sudoku/features/sudoku/engine/generator/puzzle_generator.dart';
+import 'package:m6_sudoku/features/sudoku/engine/models/board.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 import 'package:m6_sudoku/features/sudoku/engine/solver/sudoku_solver.dart';
 import 'package:m6_sudoku/features/sudoku/engine/validator/unique_solution_validator.dart';
@@ -75,6 +76,45 @@ void main() {
 
         expect(board.isValid, true);
         expect(UniqueSolutionValidator.hasUniqueSolution(board), true);
+      });
+    });
+
+    group('time budget', () {
+      test('stops retrying once the budget is spent', () {
+        final generator = PuzzleGenerator(seed: 42);
+        final stopwatch = Stopwatch()..start();
+        // An unreachable target would otherwise run all 10,000 attempts.
+        final board = generator.generatePuzzle(
+          clues: 17,
+          maxAttempts: 10000,
+          timeBudget: const Duration(milliseconds: 200),
+        );
+
+        expect(stopwatch.elapsed, lessThan(const Duration(seconds: 5)));
+        expect(board.isValid, true);
+        expect(UniqueSolutionValidator.hasUniqueSolution(board), true);
+      });
+
+      test('unseeded evil puzzle generates quickly and is unique', () {
+        final stopwatch = Stopwatch()..start();
+        final result = generatePuzzleInBackground((
+          difficulty: Difficulty.evil,
+          seed: null,
+        ));
+
+        expect(
+          stopwatch.elapsed,
+          lessThan(
+            PuzzleGenerator.unseededTimeBudget + const Duration(seconds: 3),
+          ),
+        );
+        expect(result.cluesCount, lessThanOrEqualTo(24));
+        expect(
+          UniqueSolutionValidator.hasUniqueSolution(
+            Board.fromGrid(result.grid),
+          ),
+          true,
+        );
       });
     });
 

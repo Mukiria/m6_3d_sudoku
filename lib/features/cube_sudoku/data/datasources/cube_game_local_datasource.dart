@@ -7,6 +7,7 @@ import 'package:m6_sudoku/core/services/json_store.dart';
 import 'package:m6_sudoku/core/services/storage_service.dart';
 import 'package:m6_sudoku/features/cube_sudoku/domain/entities/cube_face.dart';
 import 'package:m6_sudoku/features/cube_sudoku/domain/entities/cube_game_state.dart';
+import 'package:m6_sudoku/features/sudoku/data/datasources/puzzle_bank_source.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
 import 'package:m6_sudoku/features/sudoku/engine/generator/puzzle_generator.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
@@ -16,33 +17,34 @@ import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
 /// cube game and a paused regular game can coexist (mirrors how the daily
 /// challenge already keeps its own slot).
 class CubeGameLocalDataSource {
-  CubeGameLocalDataSource(this._storage, [PuzzleGenerator? generator])
-    : _generator = generator ?? PuzzleGenerator(),
-      _json = JsonStore(_storage);
+  CubeGameLocalDataSource(
+    this._storage, [
+    PuzzleGenerator? generator,
+    PuzzleBankSource? bank,
+  ]) : _generator = generator ?? PuzzleGenerator(),
+       _bank = bank ?? PuzzleBankSource(),
+       _json = JsonStore(_storage);
 
   final StorageService _storage;
   final PuzzleGenerator _generator;
+  final PuzzleBankSource _bank;
   final JsonStore _json;
 
   static const String _cubeGameStateKey = 'cube_game_state';
 
-  /// Generates one puzzle per face, all in parallel via [compute] — each
-  /// call spawns its own background isolate (see
-  /// `generatePuzzleInBackground`'s doc comment), so six puzzles — even at
-  /// Expert/Evil clue counts — generate concurrently rather than one after
-  /// another.
+  /// Draws one puzzle per face from the pre-graded bank (see
+  /// [PuzzleBankSource]), same policy as the regular game. Any face the bank
+  /// can't serve — or every face, if a seeded generator was injected — is
+  /// generated live instead, all in parallel via [compute], each call on its
+  /// own background isolate (see `generatePuzzleInBackground`'s doc
+  /// comment).
   Future<Either<Failure, Map<CubeFace, Puzzle>>> generateCubePuzzles(
     Map<CubeFace, Difficulty> difficulties,
   ) async {
     try {
       final entries = difficulties.entries.toList();
       final results = await Future.wait(
-        entries.map(
-          (entry) => compute(generatePuzzleInBackground, (
-            difficulty: entry.value,
-            seed: _generator.seed,
-          )),
-        ),
+        entries.map((entry) => _drawOrGenerate(entry.value)),
       );
 
       final generatedAt = DateTime.now();
@@ -69,6 +71,15 @@ class CubeGameLocalDataSource {
         PuzzleGenerationFailure('Failed to generate cube puzzles: $e'),
       );
     }
+  }
+
+  Future<PuzzleGenerationResult> _drawOrGenerate(Difficulty difficulty) async {
+    final drawn = _generator.seed == null ? await _bank.draw(difficulty) : null;
+    return drawn ??
+        await compute(generatePuzzleInBackground, (
+          difficulty: difficulty,
+          seed: _generator.seed,
+        ));
   }
 
   Future<Either<Failure, CubeGameState?>> getCubeGameState() async {

@@ -8,7 +8,32 @@ import 'package:m6_sudoku/core/services/storage_service.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/daily_challenge.dart';
 import 'package:m6_sudoku/features/sudoku/domain/entities/puzzle.dart';
 import 'package:m6_sudoku/features/sudoku/engine/generator/puzzle_generator.dart';
+import 'package:m6_sudoku/features/sudoku/engine/grader/technique_grader.dart';
 import 'package:m6_sudoku/features/sudoku/engine/models/difficulty.dart';
+
+/// The daily puzzle for [dateSeed] (YYYYMMDD): the first puzzle in a fixed
+/// seed sequence that genuinely grades as Medium (see [TechniqueGrader]).
+/// Clue count alone let the occasional daily need chains or trial and
+/// error. Generation and grading are both deterministic, so every device
+/// still settles on the same puzzle. The first seed is the date itself, so
+/// days whose original puzzle already fits keep it.
+///
+/// Top-level so it can run under [compute].
+PuzzleGenerationResult generateDailyPuzzle(int dateSeed) {
+  // Medium-generated puzzles fit Medium ~85% of the time, so running out
+  // is vanishingly unlikely; the last candidate is used if it happens.
+  const maxCandidates = 20;
+  late PuzzleGenerationResult result;
+  for (var i = 0; i < maxCandidates; i++) {
+    // Stride past any YYYYMMDD value so no two dates share a seed.
+    result = generatePuzzleInBackground((
+      difficulty: Difficulty.medium,
+      seed: dateSeed + i * 100000000,
+    ));
+    if (TechniqueGrader.grade(result.grid).fits(Difficulty.medium)) break;
+  }
+  return result;
+}
 
 class DailyChallengeLocalDataSource {
   DailyChallengeLocalDataSource(this._storage) : _json = JsonStore(_storage);
@@ -150,11 +175,7 @@ class DailyChallengeLocalDataSource {
   // so every player gets the same puzzle regardless of which isolate solves
   // it.
   Future<Puzzle> _generateDailyPuzzle(String date) async {
-    final seed = _dateToSeed(date);
-    final result = await compute(generatePuzzleInBackground, (
-      difficulty: Difficulty.medium,
-      seed: seed,
-    ));
+    final result = await compute(generateDailyPuzzle, _dateToSeed(date));
 
     return Puzzle(
       id: 'daily_$date',

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:m6_sudoku/core/constants/app_constants.dart';
 import 'package:m6_sudoku/core/theme/app_theme_extension.dart';
 import 'package:m6_sudoku/core/theme/glass_tokens.dart';
@@ -42,7 +41,11 @@ class AppTheme {
       inversePrimary: Color(0xFF90CAF9),
     );
 
-    final TextTheme textTheme = GoogleFonts.interTextTheme().apply(
+    // Inter is bundled as a pubspec font asset, not fetched at runtime:
+    // release builds have no INTERNET permission, so google_fonts' download
+    // silently failed and every screen fell back to Roboto.
+    final TextTheme textTheme = ThemeData.light().textTheme.apply(
+      fontFamily: fontFamily,
       bodyColor: colorScheme.onSurface,
       displayColor: colorScheme.onSurface,
     );
@@ -688,9 +691,8 @@ class AppTheme {
       inversePrimary: Color(0xFF1976D2),
     );
 
-    final TextTheme textTheme = GoogleFonts.interTextTheme(
-      ThemeData.dark().textTheme,
-    ).apply(
+    final TextTheme textTheme = ThemeData.dark().textTheme.apply(
+      fontFamily: fontFamily,
       bodyColor: colorScheme.onSurface,
       displayColor: colorScheme.onSurface,
     );

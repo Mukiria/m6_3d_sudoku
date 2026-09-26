@@ -83,7 +83,7 @@ We're excited to announce the first production release of **M6 Sudoku** - a beau
 ## 📦 Installation
 
 ### Android
-Download from [Google Play Store](https://play.google.com/store/apps/details?id=com.m6.sudoku)
+Download from [Google Play Store](https://play.google.com/store/apps/details?id=com.msixv.m6sudoku)
 
 ### Web
 Play instantly at [m6-sudoku.web.app](https://m6-sudoku.web.app)

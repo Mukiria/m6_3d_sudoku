@@ -19,6 +19,12 @@ class AudioManager {
   Future<void> initialize() async {
     if (_initialized) return;
     _initialized = true;
+    // Sound effects should mix with whatever the user is already playing
+    // (e.g. background music apps) rather than requesting exclusive audio
+    // focus and stopping it — the platform default (`gain`) does the latter.
+    await AudioPlayer.global.setAudioContext(
+      AudioContextConfig(focus: AudioContextConfigFocus.mixWithOthers).build(),
+    );
     await _player.setReleaseMode(ReleaseMode.stop);
     await _player.setVolume(_isMuted ? 0 : _volume);
   }

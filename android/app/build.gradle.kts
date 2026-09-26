@@ -16,7 +16,10 @@ plugins {
 
 android {
     namespace = "com.msixv.m6sudoku"
-    compileSdk = flutter.compileSdkVersion
+    // Pinned above Flutter 3.29's default (35): Google Play requires new
+    // apps and updates to target the latest Android API level within a
+    // year of its release, and Android 16 (API 36) is that level now.
+    compileSdk = 36
     // Pinned above flutter.ndkVersion's default (26.3.11579264) — several
     // plugins (audioplayers, flutter_native_splash, path_provider,
     // shared_preferences, url_launcher) require 27.0.12077973, and NDK is
@@ -37,7 +40,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

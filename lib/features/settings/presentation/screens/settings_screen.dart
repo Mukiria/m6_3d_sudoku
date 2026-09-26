@@ -169,7 +169,7 @@ class SettingsScreen extends ConsumerWidget {
               context,
               icon: Icons.info_rounded,
               title: 'Version',
-              subtitle: 'M6 Sudoku ${AppConstants.appVersion}',
+              subtitle: '${AppConstants.appName} ${AppConstants.appVersion}',
               onTap: () {},
             ),
             _buildSettingTile(
@@ -177,7 +177,10 @@ class SettingsScreen extends ConsumerWidget {
               icon: Icons.privacy_tip_rounded,
               title: 'Privacy Policy',
               subtitle: 'Read our privacy policy',
-              onTap: () => _launchUrl('https://msixv.com/games/privacy-policy'),
+              onTap:
+                  () => _launchUrl(
+                    'https://msixv.com/games/m6-3d-sudoku/privacy-policy/',
+                  ),
             ),
             _buildSettingTile(
               context,
@@ -198,7 +201,7 @@ class SettingsScreen extends ConsumerWidget {
               context,
               icon: Icons.star_rounded,
               title: 'Rate App',
-              subtitle: 'Enjoying M6 Sudoku? Rate us!',
+              subtitle: 'Enjoying ${AppConstants.appName}? Rate us!',
               onTap:
                   () => _launchUrl(
                     'https://play.google.com/store/apps/details?id=${AppConstants.bundleId}',

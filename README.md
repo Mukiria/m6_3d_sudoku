@@ -30,7 +30,7 @@ A production-ready Flutter Sudoku application built with Clean Architecture, Fea
 
 ## Download
 
-- **Android**: [Google Play Store](https://play.google.com/store/apps/details?id=com.m6.sudoku)
+- **Android**: [Google Play Store](https://play.google.com/store/apps/details?id=com.msixv.m6sudoku)
 - **Web**: [Play Online](https://m6-sudoku.web.app)
 
 ## Architecture

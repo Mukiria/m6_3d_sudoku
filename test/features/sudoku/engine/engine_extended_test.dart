@@ -230,7 +230,7 @@ void main() {
       expect(Difficulty.medium.cluesCount, 30);
       expect(Difficulty.hard.cluesCount, 26);
       expect(Difficulty.expert.cluesCount, 22);
-      expect(Difficulty.evil.cluesCount, 20);
+      expect(Difficulty.evil.cluesCount, 21);
     });
 
     test('Difficulty from name works', () {

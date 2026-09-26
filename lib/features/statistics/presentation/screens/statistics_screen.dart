@@ -270,51 +270,50 @@ class StatisticsScreen extends ConsumerWidget {
     Color color, {
     bool fullWidth = false,
   }) {
+    // Icon stacked above the text rather than beside it: at two cards per
+    // row on a ~360dp phone, a side-by-side icon left only ~36dp for the
+    // label and value, so both were ellipsized ("Cub…", "2…").
     return Container(
       width: fullWidth ? double.infinity : null,
-      padding: const EdgeInsets.all(AppConstants.spacingLg),
+      padding: const EdgeInsets.all(AppConstants.spacingMd),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppConstants.borderRadius),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Row(
-        mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
-        mainAxisAlignment:
-            fullWidth ? MainAxisAlignment.center : MainAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: Colors.white, size: 24),
+            child: Icon(icon, color: Colors.white, size: 22),
           ),
-          const SizedBox(width: AppConstants.spacingMd),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
-                ),
-              ],
+          const SizedBox(height: AppConstants.spacingSm),
+          Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          // Long values like "1h 23m 45s" shrink to fit instead of
+          // truncating — a clipped number is worse than a smaller one.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
             ),
           ),
         ],
@@ -362,50 +361,36 @@ class StatisticsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                // Wrap, not Row: large counts or a bigger system font size
+                // would otherwise overflow the card's right edge.
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 4,
                   children: [
-                    Icon(
+                    _statChip(
+                      theme,
                       Icons.games_rounded,
-                      size: 14,
-                      color: theme.colorScheme.onSurfaceVariant,
+                      theme.colorScheme.onSurfaceVariant,
+                      '$played played',
                     ),
-                    const SizedBox(width: 4),
-                    Text('$played played', style: theme.textTheme.bodySmall),
-                    const SizedBox(width: 16),
-                    Icon(
+                    _statChip(
+                      theme,
                       Icons.check_circle_rounded,
-                      size: 14,
-                      color: extension.difficultyEasyColor,
+                      extension.difficultyEasyColor,
+                      '$won won',
                     ),
-                    const SizedBox(width: 4),
-                    Text('$won won', style: theme.textTheme.bodySmall),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    if (bestTime > 0) ...[
-                      Icon(
+                    if (bestTime > 0)
+                      _statChip(
+                        theme,
                         Icons.timer_rounded,
-                        size: 14,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
+                        theme.colorScheme.onSurfaceVariant,
                         'Best: ${_formatTime(bestTime)}',
-                        style: theme.textTheme.bodySmall,
                       ),
-                      const SizedBox(width: 16),
-                    ],
-                    Icon(
+                    _statChip(
+                      theme,
                       Icons.trending_up_rounded,
-                      size: 14,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
+                      theme.colorScheme.onSurfaceVariant,
                       '${(winRate * 100).toStringAsFixed(0)}% win rate',
-                      style: theme.textTheme.bodySmall,
                     ),
                   ],
                 ),
@@ -414,6 +399,22 @@ class StatisticsScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _statChip(
+    ThemeData theme,
+    IconData icon,
+    Color iconColor,
+    String label,
+  ) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: iconColor),
+        const SizedBox(width: 4),
+        Text(label, style: theme.textTheme.bodySmall),
+      ],
     );
   }
 

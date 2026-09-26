@@ -203,13 +203,13 @@ class HomeScreen extends ConsumerWidget {
 
               // Mascot
               Center(
-                child: Image.asset(
-                  'assets/images/m6-sudoku-mascot.png',
-                  height: 160,
-                  fit: BoxFit.contain,
-                  excludeFromSemantics: true,
-                ),
-              )
+                    child: Image.asset(
+                      'assets/images/m6-sudoku-mascot.png',
+                      height: 160,
+                      fit: BoxFit.contain,
+                      excludeFromSemantics: true,
+                    ),
+                  )
                   .animate()
                   .fadeIn(duration: 400.ms, delay: 650.ms)
                   .slideY(

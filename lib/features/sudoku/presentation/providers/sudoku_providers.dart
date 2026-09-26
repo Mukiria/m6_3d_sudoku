@@ -6,6 +6,7 @@ import 'package:m6_sudoku/features/settings/presentation/providers/settings_prov
 import 'package:m6_sudoku/features/sudoku/data/datasources/achievement_local_datasource.dart';
 import 'package:m6_sudoku/features/sudoku/data/datasources/daily_challenge_local_datasource.dart';
 import 'package:m6_sudoku/features/sudoku/data/datasources/daily_streak_local_datasource.dart';
+import 'package:m6_sudoku/features/sudoku/data/datasources/puzzle_bank_source.dart';
 import 'package:m6_sudoku/features/sudoku/data/datasources/puzzle_local_datasource.dart';
 import 'package:m6_sudoku/features/sudoku/data/repositories/achievement_repository_impl.dart';
 import 'package:m6_sudoku/features/sudoku/data/repositories/daily_challenge_repository_impl.dart';
@@ -31,10 +32,17 @@ final puzzleGeneratorProvider = Provider<PuzzleGenerator>((ref) {
   return PuzzleGenerator();
 });
 
+// One instance for the whole app so each bank asset is parsed only once,
+// whether the regular or the cube game asks for it first.
+final puzzleBankSourceProvider = Provider<PuzzleBankSource>((ref) {
+  return PuzzleBankSource();
+});
+
 final puzzleLocalDataSourceProvider = Provider<PuzzleLocalDataSource>((ref) {
   final storage = ref.read(storageServiceProvider);
   final generator = ref.read(puzzleGeneratorProvider);
-  return PuzzleLocalDataSource(storage, generator);
+  final bank = ref.read(puzzleBankSourceProvider);
+  return PuzzleLocalDataSource(storage, generator, bank);
 });
 
 final puzzleRepositoryProvider = Provider<PuzzleRepository>((ref) {

@@ -250,8 +250,7 @@ class _CubeCompletionScreenState extends ConsumerState<CubeCompletionScreen> {
                                             ),
                                         variant: AppButtonVariant.filled,
                                         size: AppButtonSize.large,
-                                        glassTint: AppThemeExtension
-                                            .brandOrange
+                                        glassTint: AppThemeExtension.brandOrange
                                             .withValues(alpha: 0.85),
                                         foregroundColor: Colors.white,
                                         icon: const Icon(Icons.refresh_rounded),
