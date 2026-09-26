@@ -1,6 +1,6 @@
 name: m6_sudoku
 description: A production-ready Flutter Sudoku application built with Clean Architecture, Feature-first architecture, Riverpod, and GoRouter.
-version: 1.0.0+1
+version: 1.0.0+3
 
 environment:
   sdk: ">=3.7.0 <4.0.0"

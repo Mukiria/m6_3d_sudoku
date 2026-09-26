@@ -1,6 +1,6 @@
 {
-  "name": "M6 Sudoku",
-  "short_name": "M6 Sudoku",
+  "name": "M6 3D Sudoku",
+  "short_name": "M6 3D Sudoku",
   "description": "Classic Sudoku plus 3D Cube Sudoku: six puzzles on a rotatable cube, daily challenges, achievements and statistics.",
   "start_url": ".",
   "scope": ".",

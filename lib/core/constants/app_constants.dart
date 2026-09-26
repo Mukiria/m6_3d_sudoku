@@ -2,10 +2,10 @@ class AppConstants {
   AppConstants._();
 
   // App Info
-  static const String appName = 'M6 Sudoku';
+  static const String appName = 'M6 3D Sudoku';
   static const String appVersion = '1.0.0';
   static const String appBuildNumber = '1';
-  static const String bundleId = 'com.m6.sudoku';
+  static const String bundleId = 'com.msixv.m6sudoku';
 
   // Storage Keys
   static const String keyCurrentGame = 'current_game';
